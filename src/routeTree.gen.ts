@@ -9,38 +9,217 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as NovoRouteImport } from './routes/novo'
+import { Route as CreditosRouteImport } from './routes/creditos'
+import { Route as GameRouteImport } from './routes/_game'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as GameJogoIndexRouteImport } from './routes/_game.jogo.index'
+import { Route as GameJogoNoticiasRouteImport } from './routes/_game.jogo.noticias'
+import { Route as GameJogoMercadoRouteImport } from './routes/_game.jogo.mercado'
+import { Route as GameJogoExplorarRouteImport } from './routes/_game.jogo.explorar'
+import { Route as GameJogoConfiguracoesRouteImport } from './routes/_game.jogo.configuracoes'
+import { Route as GameJogoCalendarioRouteImport } from './routes/_game.jogo.calendario'
+import { Route as GameJogoAgenciaRouteImport } from './routes/_game.jogo.agencia'
+import { Route as GameJogoMeusIndexRouteImport } from './routes/_game.jogo.meus.index'
+import { Route as GameJogoMeusIdRouteImport } from './routes/_game.jogo.meus.$id'
+import { Route as GameJogoJogadorIdRouteImport } from './routes/_game.jogo.jogador.$id'
 
+const NovoRoute = NovoRouteImport.update({
+  id: '/novo',
+  path: '/novo',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CreditosRoute = CreditosRouteImport.update({
+  id: '/creditos',
+  path: '/creditos',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const GameRoute = GameRouteImport.update({
+  id: '/_game',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const GameJogoIndexRoute = GameJogoIndexRouteImport.update({
+  id: '/jogo/',
+  path: '/jogo/',
+  getParentRoute: () => GameRoute,
+} as any)
+const GameJogoNoticiasRoute = GameJogoNoticiasRouteImport.update({
+  id: '/jogo/noticias',
+  path: '/jogo/noticias',
+  getParentRoute: () => GameRoute,
+} as any)
+const GameJogoMercadoRoute = GameJogoMercadoRouteImport.update({
+  id: '/jogo/mercado',
+  path: '/jogo/mercado',
+  getParentRoute: () => GameRoute,
+} as any)
+const GameJogoExplorarRoute = GameJogoExplorarRouteImport.update({
+  id: '/jogo/explorar',
+  path: '/jogo/explorar',
+  getParentRoute: () => GameRoute,
+} as any)
+const GameJogoConfiguracoesRoute = GameJogoConfiguracoesRouteImport.update({
+  id: '/jogo/configuracoes',
+  path: '/jogo/configuracoes',
+  getParentRoute: () => GameRoute,
+} as any)
+const GameJogoCalendarioRoute = GameJogoCalendarioRouteImport.update({
+  id: '/jogo/calendario',
+  path: '/jogo/calendario',
+  getParentRoute: () => GameRoute,
+} as any)
+const GameJogoAgenciaRoute = GameJogoAgenciaRouteImport.update({
+  id: '/jogo/agencia',
+  path: '/jogo/agencia',
+  getParentRoute: () => GameRoute,
+} as any)
+const GameJogoMeusIndexRoute = GameJogoMeusIndexRouteImport.update({
+  id: '/jogo/meus/',
+  path: '/jogo/meus/',
+  getParentRoute: () => GameRoute,
+} as any)
+const GameJogoMeusIdRoute = GameJogoMeusIdRouteImport.update({
+  id: '/jogo/meus/$id',
+  path: '/jogo/meus/$id',
+  getParentRoute: () => GameRoute,
+} as any)
+const GameJogoJogadorIdRoute = GameJogoJogadorIdRouteImport.update({
+  id: '/jogo/jogador/$id',
+  path: '/jogo/jogador/$id',
+  getParentRoute: () => GameRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/creditos': typeof CreditosRoute
+  '/novo': typeof NovoRoute
+  '/jogo/agencia': typeof GameJogoAgenciaRoute
+  '/jogo/calendario': typeof GameJogoCalendarioRoute
+  '/jogo/configuracoes': typeof GameJogoConfiguracoesRoute
+  '/jogo/explorar': typeof GameJogoExplorarRoute
+  '/jogo/mercado': typeof GameJogoMercadoRoute
+  '/jogo/noticias': typeof GameJogoNoticiasRoute
+  '/jogo/': typeof GameJogoIndexRoute
+  '/jogo/jogador/$id': typeof GameJogoJogadorIdRoute
+  '/jogo/meus/$id': typeof GameJogoMeusIdRoute
+  '/jogo/meus/': typeof GameJogoMeusIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/creditos': typeof CreditosRoute
+  '/novo': typeof NovoRoute
+  '/jogo/agencia': typeof GameJogoAgenciaRoute
+  '/jogo/calendario': typeof GameJogoCalendarioRoute
+  '/jogo/configuracoes': typeof GameJogoConfiguracoesRoute
+  '/jogo/explorar': typeof GameJogoExplorarRoute
+  '/jogo/mercado': typeof GameJogoMercadoRoute
+  '/jogo/noticias': typeof GameJogoNoticiasRoute
+  '/jogo': typeof GameJogoIndexRoute
+  '/jogo/jogador/$id': typeof GameJogoJogadorIdRoute
+  '/jogo/meus/$id': typeof GameJogoMeusIdRoute
+  '/jogo/meus': typeof GameJogoMeusIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/_game': typeof GameRouteWithChildren
+  '/creditos': typeof CreditosRoute
+  '/novo': typeof NovoRoute
+  '/_game/jogo/agencia': typeof GameJogoAgenciaRoute
+  '/_game/jogo/calendario': typeof GameJogoCalendarioRoute
+  '/_game/jogo/configuracoes': typeof GameJogoConfiguracoesRoute
+  '/_game/jogo/explorar': typeof GameJogoExplorarRoute
+  '/_game/jogo/mercado': typeof GameJogoMercadoRoute
+  '/_game/jogo/noticias': typeof GameJogoNoticiasRoute
+  '/_game/jogo/': typeof GameJogoIndexRoute
+  '/_game/jogo/jogador/$id': typeof GameJogoJogadorIdRoute
+  '/_game/jogo/meus/$id': typeof GameJogoMeusIdRoute
+  '/_game/jogo/meus/': typeof GameJogoMeusIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/creditos'
+    | '/novo'
+    | '/jogo/agencia'
+    | '/jogo/calendario'
+    | '/jogo/configuracoes'
+    | '/jogo/explorar'
+    | '/jogo/mercado'
+    | '/jogo/noticias'
+    | '/jogo/'
+    | '/jogo/jogador/$id'
+    | '/jogo/meus/$id'
+    | '/jogo/meus/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/creditos'
+    | '/novo'
+    | '/jogo/agencia'
+    | '/jogo/calendario'
+    | '/jogo/configuracoes'
+    | '/jogo/explorar'
+    | '/jogo/mercado'
+    | '/jogo/noticias'
+    | '/jogo'
+    | '/jogo/jogador/$id'
+    | '/jogo/meus/$id'
+    | '/jogo/meus'
+  id:
+    | '__root__'
+    | '/'
+    | '/_game'
+    | '/creditos'
+    | '/novo'
+    | '/_game/jogo/agencia'
+    | '/_game/jogo/calendario'
+    | '/_game/jogo/configuracoes'
+    | '/_game/jogo/explorar'
+    | '/_game/jogo/mercado'
+    | '/_game/jogo/noticias'
+    | '/_game/jogo/'
+    | '/_game/jogo/jogador/$id'
+    | '/_game/jogo/meus/$id'
+    | '/_game/jogo/meus/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  GameRoute: typeof GameRouteWithChildren
+  CreditosRoute: typeof CreditosRoute
+  NovoRoute: typeof NovoRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/novo': {
+      id: '/novo'
+      path: '/novo'
+      fullPath: '/novo'
+      preLoaderRoute: typeof NovoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/creditos': {
+      id: '/creditos'
+      path: '/creditos'
+      fullPath: '/creditos'
+      preLoaderRoute: typeof CreditosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_game': {
+      id: '/_game'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof GameRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -48,22 +227,113 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_game/jogo/': {
+      id: '/_game/jogo/'
+      path: '/jogo'
+      fullPath: '/jogo/'
+      preLoaderRoute: typeof GameJogoIndexRouteImport
+      parentRoute: typeof GameRoute
+    }
+    '/_game/jogo/noticias': {
+      id: '/_game/jogo/noticias'
+      path: '/jogo/noticias'
+      fullPath: '/jogo/noticias'
+      preLoaderRoute: typeof GameJogoNoticiasRouteImport
+      parentRoute: typeof GameRoute
+    }
+    '/_game/jogo/mercado': {
+      id: '/_game/jogo/mercado'
+      path: '/jogo/mercado'
+      fullPath: '/jogo/mercado'
+      preLoaderRoute: typeof GameJogoMercadoRouteImport
+      parentRoute: typeof GameRoute
+    }
+    '/_game/jogo/explorar': {
+      id: '/_game/jogo/explorar'
+      path: '/jogo/explorar'
+      fullPath: '/jogo/explorar'
+      preLoaderRoute: typeof GameJogoExplorarRouteImport
+      parentRoute: typeof GameRoute
+    }
+    '/_game/jogo/configuracoes': {
+      id: '/_game/jogo/configuracoes'
+      path: '/jogo/configuracoes'
+      fullPath: '/jogo/configuracoes'
+      preLoaderRoute: typeof GameJogoConfiguracoesRouteImport
+      parentRoute: typeof GameRoute
+    }
+    '/_game/jogo/calendario': {
+      id: '/_game/jogo/calendario'
+      path: '/jogo/calendario'
+      fullPath: '/jogo/calendario'
+      preLoaderRoute: typeof GameJogoCalendarioRouteImport
+      parentRoute: typeof GameRoute
+    }
+    '/_game/jogo/agencia': {
+      id: '/_game/jogo/agencia'
+      path: '/jogo/agencia'
+      fullPath: '/jogo/agencia'
+      preLoaderRoute: typeof GameJogoAgenciaRouteImport
+      parentRoute: typeof GameRoute
+    }
+    '/_game/jogo/meus/': {
+      id: '/_game/jogo/meus/'
+      path: '/jogo/meus'
+      fullPath: '/jogo/meus/'
+      preLoaderRoute: typeof GameJogoMeusIndexRouteImport
+      parentRoute: typeof GameRoute
+    }
+    '/_game/jogo/meus/$id': {
+      id: '/_game/jogo/meus/$id'
+      path: '/jogo/meus/$id'
+      fullPath: '/jogo/meus/$id'
+      preLoaderRoute: typeof GameJogoMeusIdRouteImport
+      parentRoute: typeof GameRoute
+    }
+    '/_game/jogo/jogador/$id': {
+      id: '/_game/jogo/jogador/$id'
+      path: '/jogo/jogador/$id'
+      fullPath: '/jogo/jogador/$id'
+      preLoaderRoute: typeof GameJogoJogadorIdRouteImport
+      parentRoute: typeof GameRoute
+    }
   }
 }
 
+interface GameRouteChildren {
+  GameJogoAgenciaRoute: typeof GameJogoAgenciaRoute
+  GameJogoCalendarioRoute: typeof GameJogoCalendarioRoute
+  GameJogoConfiguracoesRoute: typeof GameJogoConfiguracoesRoute
+  GameJogoExplorarRoute: typeof GameJogoExplorarRoute
+  GameJogoMercadoRoute: typeof GameJogoMercadoRoute
+  GameJogoNoticiasRoute: typeof GameJogoNoticiasRoute
+  GameJogoIndexRoute: typeof GameJogoIndexRoute
+  GameJogoJogadorIdRoute: typeof GameJogoJogadorIdRoute
+  GameJogoMeusIdRoute: typeof GameJogoMeusIdRoute
+  GameJogoMeusIndexRoute: typeof GameJogoMeusIndexRoute
+}
+
+const GameRouteChildren: GameRouteChildren = {
+  GameJogoAgenciaRoute: GameJogoAgenciaRoute,
+  GameJogoCalendarioRoute: GameJogoCalendarioRoute,
+  GameJogoConfiguracoesRoute: GameJogoConfiguracoesRoute,
+  GameJogoExplorarRoute: GameJogoExplorarRoute,
+  GameJogoMercadoRoute: GameJogoMercadoRoute,
+  GameJogoNoticiasRoute: GameJogoNoticiasRoute,
+  GameJogoIndexRoute: GameJogoIndexRoute,
+  GameJogoJogadorIdRoute: GameJogoJogadorIdRoute,
+  GameJogoMeusIdRoute: GameJogoMeusIdRoute,
+  GameJogoMeusIndexRoute: GameJogoMeusIndexRoute,
+}
+
+const GameRouteWithChildren = GameRoute._addFileChildren(GameRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  GameRoute: GameRouteWithChildren,
+  CreditosRoute: CreditosRoute,
+  NovoRoute: NovoRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
