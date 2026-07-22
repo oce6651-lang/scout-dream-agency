@@ -4,10 +4,10 @@ import { useGame } from "@/game/store";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Project Football Agent — Sua carreira de empresário" },
+      { title: "Sua carreira de empresário de futebol" },
       { name: "description", content: "Construa sua agência de futebol do zero. Descubra jovens talentos, feche contratos e ganhe prestígio mundial." },
-      { property: "og:title", content: "Project Football Agent" },
-      { property: "og:description", content: "Simulação de empresário de futebol." },
+      { property: "og:title", content: "Sua carreira de empresário de futebol" },
+      { property: "og:description", content: "Construa sua agência de futebol do zero. Descubra jovens talentos, feche contratos e ganhe prestígio mundial." },
     ],
   }),
   component: Menu,
