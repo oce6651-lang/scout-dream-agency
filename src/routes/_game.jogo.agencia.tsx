@@ -25,7 +25,7 @@ function Agencia() {
   const save = useGame((s) => s.save)!;
   const contratar = useGame((s) => s.contratarFuncionario);
   const demitir = useGame((s) => s.demitirFuncionario);
-  const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  const [msg, setMsg] = useState<{ ok: boolean; msg: string } | null>(null);
 
   return (
     <Screen title="Minha Agência" subtitle={save.agencia.nome} back="/jogo">
@@ -48,7 +48,7 @@ function Agencia() {
 
       {msg ? (
         <div className={`mb-3 rounded-lg px-3 py-2 text-center text-xs ring-1 ${msg.ok ? "bg-emerald-500/10 text-emerald-400 ring-emerald-500/30" : "bg-red-500/10 text-red-400 ring-red-500/30"}`}>
-          {msg.text}
+          {msg.msg}
         </div>
       ) : null}
 
