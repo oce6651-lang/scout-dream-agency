@@ -21,6 +21,7 @@ import { Route as GameJogoConfiguracoesRouteImport } from './routes/_game.jogo.c
 import { Route as GameJogoCalendarioRouteImport } from './routes/_game.jogo.calendario'
 import { Route as GameJogoAgenciaRouteImport } from './routes/_game.jogo.agencia'
 import { Route as GameJogoMeusIndexRouteImport } from './routes/_game.jogo.meus.index'
+import { Route as GameJogoPartidaIdRouteImport } from './routes/_game.jogo.partida.$id'
 import { Route as GameJogoMeusIdRouteImport } from './routes/_game.jogo.meus.$id'
 import { Route as GameJogoJogadorIdRouteImport } from './routes/_game.jogo.jogador.$id'
 
@@ -83,6 +84,11 @@ const GameJogoMeusIndexRoute = GameJogoMeusIndexRouteImport.update({
   path: '/jogo/meus/',
   getParentRoute: () => GameRoute,
 } as any)
+const GameJogoPartidaIdRoute = GameJogoPartidaIdRouteImport.update({
+  id: '/jogo/partida/$id',
+  path: '/jogo/partida/$id',
+  getParentRoute: () => GameRoute,
+} as any)
 const GameJogoMeusIdRoute = GameJogoMeusIdRouteImport.update({
   id: '/jogo/meus/$id',
   path: '/jogo/meus/$id',
@@ -107,6 +113,7 @@ export interface FileRoutesByFullPath {
   '/jogo/': typeof GameJogoIndexRoute
   '/jogo/jogador/$id': typeof GameJogoJogadorIdRoute
   '/jogo/meus/$id': typeof GameJogoMeusIdRoute
+  '/jogo/partida/$id': typeof GameJogoPartidaIdRoute
   '/jogo/meus/': typeof GameJogoMeusIndexRoute
 }
 export interface FileRoutesByTo {
@@ -122,6 +129,7 @@ export interface FileRoutesByTo {
   '/jogo': typeof GameJogoIndexRoute
   '/jogo/jogador/$id': typeof GameJogoJogadorIdRoute
   '/jogo/meus/$id': typeof GameJogoMeusIdRoute
+  '/jogo/partida/$id': typeof GameJogoPartidaIdRoute
   '/jogo/meus': typeof GameJogoMeusIndexRoute
 }
 export interface FileRoutesById {
@@ -139,6 +147,7 @@ export interface FileRoutesById {
   '/_game/jogo/': typeof GameJogoIndexRoute
   '/_game/jogo/jogador/$id': typeof GameJogoJogadorIdRoute
   '/_game/jogo/meus/$id': typeof GameJogoMeusIdRoute
+  '/_game/jogo/partida/$id': typeof GameJogoPartidaIdRoute
   '/_game/jogo/meus/': typeof GameJogoMeusIndexRoute
 }
 export interface FileRouteTypes {
@@ -156,6 +165,7 @@ export interface FileRouteTypes {
     | '/jogo/'
     | '/jogo/jogador/$id'
     | '/jogo/meus/$id'
+    | '/jogo/partida/$id'
     | '/jogo/meus/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -171,6 +181,7 @@ export interface FileRouteTypes {
     | '/jogo'
     | '/jogo/jogador/$id'
     | '/jogo/meus/$id'
+    | '/jogo/partida/$id'
     | '/jogo/meus'
   id:
     | '__root__'
@@ -187,6 +198,7 @@ export interface FileRouteTypes {
     | '/_game/jogo/'
     | '/_game/jogo/jogador/$id'
     | '/_game/jogo/meus/$id'
+    | '/_game/jogo/partida/$id'
     | '/_game/jogo/meus/'
   fileRoutesById: FileRoutesById
 }
@@ -283,6 +295,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof GameJogoMeusIndexRouteImport
       parentRoute: typeof GameRoute
     }
+    '/_game/jogo/partida/$id': {
+      id: '/_game/jogo/partida/$id'
+      path: '/jogo/partida/$id'
+      fullPath: '/jogo/partida/$id'
+      preLoaderRoute: typeof GameJogoPartidaIdRouteImport
+      parentRoute: typeof GameRoute
+    }
     '/_game/jogo/meus/$id': {
       id: '/_game/jogo/meus/$id'
       path: '/jogo/meus/$id'
@@ -310,6 +329,7 @@ interface GameRouteChildren {
   GameJogoIndexRoute: typeof GameJogoIndexRoute
   GameJogoJogadorIdRoute: typeof GameJogoJogadorIdRoute
   GameJogoMeusIdRoute: typeof GameJogoMeusIdRoute
+  GameJogoPartidaIdRoute: typeof GameJogoPartidaIdRoute
   GameJogoMeusIndexRoute: typeof GameJogoMeusIndexRoute
 }
 
@@ -323,6 +343,7 @@ const GameRouteChildren: GameRouteChildren = {
   GameJogoIndexRoute: GameJogoIndexRoute,
   GameJogoJogadorIdRoute: GameJogoJogadorIdRoute,
   GameJogoMeusIdRoute: GameJogoMeusIdRoute,
+  GameJogoPartidaIdRoute: GameJogoPartidaIdRoute,
   GameJogoMeusIndexRoute: GameJogoMeusIndexRoute,
 }
 
