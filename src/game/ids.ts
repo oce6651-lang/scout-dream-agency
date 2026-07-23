@@ -1,4 +1,4 @@
-export type IdPrefix = "AGT" | "AGN" | "PLR" | "CLB" | "NWS" | "OFR" | "STF";
+export type IdPrefix = "AGT" | "AGN" | "PLR" | "CLB" | "NWS" | "OFR" | "STF" | "MTC";
 
 export function makeId(
   counters: Record<string, number>,

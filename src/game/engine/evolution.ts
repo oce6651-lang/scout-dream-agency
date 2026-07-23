@@ -4,6 +4,7 @@ import { calcularValorMercado } from "./scouting";
 
 // Called once per year for each agency-client player
 export function evoluirAno(j: Jogador): Jogador {
+  if (j.aposentado) return j;
   const novo: Jogador = {
     ...j,
     atributos: { ...j.atributos },

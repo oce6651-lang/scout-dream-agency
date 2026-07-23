@@ -6,6 +6,8 @@ import { AttributeBar } from "@/components/game/AttributeBar";
 import { NIVEIS_OBSERVACAO, textoPotencial } from "@/game/engine/observation";
 import { PrimaryCTA } from "@/components/game/PrimaryCTA";
 import { chanceAssinatura } from "@/game/engine/signing";
+import { bonusAssinatura, multiplicadorCustoObservacao } from "@/game/engine/facilities";
+import type { Jogador } from "@/game/types";
 
 export const Route = createFileRoute("/_game/jogo/jogador/$id")({
   head: () => ({
@@ -22,14 +24,14 @@ export const Route = createFileRoute("/_game/jogo/jogador/$id")({
 function Ficha() {
   const { id } = Route.useParams();
   const save = useGame((s) => s.save)!;
-  const ultimo = useGame((s) => s.ultimoScouting);
   const observar = useGame((s) => s.observar);
   const assinar = useGame((s) => s.assinar);
   const navigate = useNavigate();
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
 
-  const j =
-    ultimo?.jogadores.find((x) => x.id === id) ??
+  const partida = save.ultimaPartida;
+  const j: Jogador | undefined =
+    partida?.jogadores.find((x) => x.id === id) ??
     save.jogadores.find((x) => x.id === id);
 
   if (!j) {
@@ -40,7 +42,9 @@ function Ficha() {
     );
   }
 
-  const p = chanceAssinatura(save.empresario, j);
+  const eCliente = j.empresarioId === save.empresario.id;
+  const p = Math.min(0.98, chanceAssinatura(save.empresario, j) + bonusAssinatura(save.agencia.instalacoes));
+  const multCusto = multiplicadorCustoObservacao(save.agencia.instalacoes);
 
   const doObservar = (nivel: 1 | 2 | 3) => {
     const r = observar(id, nivel);
@@ -52,20 +56,17 @@ function Ficha() {
     if (r.ok) setTimeout(() => navigate({ to: "/jogo/meus" }), 900);
   };
 
-  const eCliente = j.empresarioId === save.empresario.id;
+  const podeContratar = !!j.interessado;
 
   return (
     <Screen title={`${j.nome} ${j.sobrenome}`} subtitle="Ficha do atleta" back="/jogo/explorar">
       <div className="mb-4 rounded-xl bg-zinc-900 p-4 ring-1 ring-white/5">
         <div className="flex items-center gap-3">
           <div className="grid size-14 place-items-center rounded-lg bg-zinc-800 text-base font-semibold text-zinc-300">
-            {j.nome[0]}
-            {j.sobrenome[0]}
+            {j.nome[0]}{j.sobrenome[0]}
           </div>
           <div className="min-w-0 flex-1">
-            <div className="text-sm font-medium text-zinc-100">
-              {j.nome} {j.sobrenome}
-            </div>
+            <div className="text-sm font-medium text-zinc-100">{j.nome} {j.sobrenome}</div>
             <div className="mt-0.5 text-[11px] text-zinc-500">
               {j.idade} anos · {j.posicao} · {j.peDominante}
             </div>
@@ -103,8 +104,9 @@ function Ficha() {
             </h2>
             <div className="space-y-2">
               {NIVEIS_OBSERVACAO.map((n) => {
+                const custo = Math.round(n.custo * multCusto);
                 const feito = j.observacaoNivel >= n.nivel;
-                const podePagar = save.empresario.dinheiro >= n.custo;
+                const podePagar = save.empresario.dinheiro >= custo;
                 return (
                   <button
                     key={n.nivel}
@@ -118,12 +120,10 @@ function Ficha() {
                     </div>
                     <div className="text-right">
                       <div className="text-xs font-medium text-emerald-500">
-                        R$ {n.custo.toLocaleString("pt-BR")}
+                        R$ {custo.toLocaleString("pt-BR")}
                       </div>
                       {feito && (
-                        <div className="text-[10px] uppercase tracking-widest text-zinc-500">
-                          Feito
-                        </div>
+                        <div className="text-[10px] uppercase tracking-widest text-zinc-500">Feito</div>
                       )}
                     </div>
                   </button>
@@ -145,20 +145,23 @@ function Ficha() {
                 Menor de idade — exige aprovação dos responsáveis.
               </div>
             )}
+            {!podeContratar && (
+              <div className="mt-2 text-[10px] text-red-400">
+                Este atleta não demonstrou interesse. Volte a assistir novas partidas.
+              </div>
+            )}
           </div>
         </>
       )}
 
       {msg ? (
-        <div
-          className={`mb-3 rounded-lg px-3 py-2 text-center text-xs ring-1 ${msg.ok ? "bg-emerald-500/10 text-emerald-400 ring-emerald-500/30" : "bg-red-500/10 text-red-400 ring-red-500/30"}`}
-        >
+        <div className={`mb-3 rounded-lg px-3 py-2 text-center text-xs ring-1 ${msg.ok ? "bg-emerald-500/10 text-emerald-400 ring-emerald-500/30" : "bg-red-500/10 text-red-400 ring-red-500/30"}`}>
           {msg.text}
         </div>
       ) : null}
 
       {!eCliente ? (
-        <PrimaryCTA onClick={doAssinar}>Tentar assinar contrato</PrimaryCTA>
+        <PrimaryCTA onClick={doAssinar} disabled={!podeContratar}>Tentar assinar contrato</PrimaryCTA>
       ) : (
         <div className="rounded-xl bg-emerald-500/10 p-3 text-center text-xs text-emerald-400 ring-1 ring-emerald-500/30">
           Este atleta já é seu cliente.

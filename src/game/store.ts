@@ -3,29 +3,51 @@ import { persist, createJSONStorage } from "zustand/middleware";
 import type {
   Agencia,
   Empresario,
+  FacilityKey,
   FinanceEntry,
   Funcionario,
   Jogador,
-  Noticia,
-  Proposta,
   SaveState,
-  Tempo,
+  YearEndResumo,
 } from "./types";
 import { makeId } from "./ids";
 import { CLUBES_SEED } from "./data/clubes";
 import { proximaSemana, semanaAbsoluta } from "./engine/time";
-import { explorarLocal, LOCAIS, type LocalScouting } from "./engine/scouting";
+import {
+  LOCAIS,
+  type LocalKey,
+  getLocal,
+  gerarPartidaTimes,
+  gerarTreino,
+  gerarJogador,
+} from "./engine/scouting";
+import { simularPartida } from "./engine/match";
+import {
+  FACILITIES,
+  bonusAssinatura,
+  bonusComissaoPct,
+  custoUpgrade,
+  FACILITY_MAX,
+  instalacoesIniciais,
+  limitePartidasSemana,
+  multiplicadorCustoObservacao,
+  nivelAgencia,
+} from "./engine/facilities";
 import { aplicarObservacao, NIVEIS_OBSERVACAO } from "./engine/observation";
 import { chanceAssinatura } from "./engine/signing";
 import { evoluirAno } from "./engine/evolution";
+import {
+  anexarCareerYear,
+  calcularResumoAno,
+  embaralharClubes,
+  tentarAposentar,
+} from "./engine/yearEnd";
 import { gerarPropostasSemana } from "./engine/market";
 import { criarNoticia } from "./engine/news";
 import { chance, randi } from "./rng";
 
 type Rascunho = {
   save: SaveState | null;
-  // ephemeral: last scouting results (not persisted deeply, but stored so page nav works)
-  ultimoScouting: { local: LocalScouting; jogadores: Jogador[] } | null;
 };
 
 type Actions = {
@@ -40,9 +62,11 @@ type Actions = {
   reset: () => void;
   temSave: () => boolean;
 
-  explorar: (local: LocalScouting) => { ok: boolean; msg?: string };
+  assistirLocal: (localKey: LocalKey) => { ok: boolean; msg?: string; partidaId?: string };
   observar: (jogadorId: string, nivel: 1 | 2 | 3) => { ok: boolean; msg?: string };
   assinar: (jogadorId: string) => { ok: boolean; msg: string };
+
+  melhorarInstalacao: (key: FacilityKey) => { ok: boolean; msg: string };
 
   responderProposta: (
     propostaId: string,
@@ -52,24 +76,23 @@ type Actions = {
   contratarFuncionario: (tipo: Funcionario["tipo"]) => { ok: boolean; msg: string };
   demitirFuncionario: (id: string) => void;
 
-  avancarSemana: () => { eventos: string[] };
+  avancarSemana: () => { eventos: string[]; resumo: YearEndResumo | null };
+  limparResumo: () => void;
 };
 
 type Store = Rascunho & Actions;
-
-function jogadorEscoutado(map: Map<string, Jogador>, id: string): Jogador | undefined {
-  return map.get(id);
-}
 
 function calcularNivelPrestigio(prestigio: number): number {
   return Math.max(1, Math.floor(prestigio / 10) + 1);
 }
 
+// Re-exports para conveniência de rotas
+export { LOCAIS, FACILITIES, custoUpgrade, FACILITY_MAX, NIVEIS_OBSERVACAO };
+
 export const useGame = create<Store>()(
   persist(
     (set, get) => ({
       save: null,
-      ultimoScouting: null,
 
       temSave: () => get().save !== null,
 
@@ -94,16 +117,18 @@ export const useGame = create<Store>()(
           nivel: 1,
           experiencia: 0,
         };
+        const instalacoes = instalacoesIniciais();
         const agencia: Agencia = {
           id: agnId,
           nome: input.nomeAgencia,
           cidade: input.cidade,
           anoFundacao: 2026,
-          nivel: 1,
+          nivel: nivelAgencia(instalacoes),
           reputacao: 1,
+          instalacoes,
         };
         const save: SaveState = {
-          version: 1,
+          version: 2,
           empresario,
           agencia,
           jogadores: [],
@@ -124,27 +149,47 @@ export const useGame = create<Store>()(
           finance: [],
           seed: Date.now() & 0xffffffff,
           lastSavedAt: Date.now(),
+          assistidosNaSemana: 0,
+          ultimaPartida: null,
+          resumoPendente: null,
         };
-        set({ save, ultimoScouting: null });
+        set({ save });
       },
 
-      reset: () => set({ save: null, ultimoScouting: null }),
+      reset: () => set({ save: null }),
 
-      explorar: (localNome) => {
+      assistirLocal: (localKey) => {
         const s = get().save;
         if (!s) return { ok: false, msg: "Sem jogo" };
-        const local = LOCAIS.find((l) => l.nome === localNome);
+        const local = getLocal(localKey);
         if (!local) return { ok: false, msg: "Local inválido" };
-        if (s.empresario.dinheiro < local.custo)
+        if (local.nivelAgenciaRequerido > s.agencia.nivel) {
+          return { ok: false, msg: `Requer agência nível ${local.nivelAgenciaRequerido}` };
+        }
+        const limite = limitePartidasSemana(s.agencia.instalacoes);
+        if (s.assistidosNaSemana >= limite) {
+          return { ok: false, msg: `Limite semanal (${limite}) atingido. Avance a semana.` };
+        }
+        if (s.empresario.dinheiro < local.custo) {
           return { ok: false, msg: "Dinheiro insuficiente" };
+        }
 
-        const { jogadores, counters } = explorarLocal(s.counters, local, {
-          estadoPreferido: s.empresario.estado,
-        });
+        // Gerar atletas
+        let counters = s.counters;
+        const ctx = { estadoPreferido: s.empresario.estado };
+        const gen = local.tipo === "partida"
+          ? gerarPartidaTimes(counters, local, ctx)
+          : gerarTreino(counters, local, ctx);
+        counters = gen.counters;
+
+        // Simular
         const semanaAbs = semanaAbsoluta(s.tempo);
+        const sim = simularPartida(counters, local, gen.jogadores, semanaAbs);
+        counters = sim.counters;
+
         const finance: FinanceEntry[] = [
           ...s.finance,
-          { semanaAbs, delta: -local.custo, motivo: `Scouting em ${local.nome}` },
+          { semanaAbs, delta: -local.custo, motivo: `Ida ao ${local.nome}` },
         ];
 
         set({
@@ -153,53 +198,53 @@ export const useGame = create<Store>()(
             counters,
             finance,
             empresario: { ...s.empresario, dinheiro: s.empresario.dinheiro - local.custo },
+            assistidosNaSemana: s.assistidosNaSemana + 1,
+            ultimaPartida: sim.partida,
             lastSavedAt: Date.now(),
           },
-          ultimoScouting: { local: localNome, jogadores },
         });
-        return { ok: true };
+        return { ok: true, partidaId: sim.partida.id };
       },
 
       observar: (jogadorId, nivel) => {
         const s = get().save;
         if (!s) return { ok: false, msg: "Sem jogo" };
         const info = NIVEIS_OBSERVACAO.find((n) => n.nivel === nivel)!;
-        if (s.empresario.dinheiro < info.custo)
-          return { ok: false, msg: "Dinheiro insuficiente" };
+        const mult = multiplicadorCustoObservacao(s.agencia.instalacoes);
+        const custo = Math.round(info.custo * mult);
+        if (s.empresario.dinheiro < custo) return { ok: false, msg: "Dinheiro insuficiente" };
 
-        // Pode ser jogador do scouting atual OU cliente da agência
-        const scoutList = get().ultimoScouting?.jogadores ?? [];
-        const idxScout = scoutList.findIndex((j) => j.id === jogadorId);
+        const partida = s.ultimaPartida;
+        const idxPartida = partida?.jogadores.findIndex((j) => j.id === jogadorId) ?? -1;
         const idxOwn = s.jogadores.findIndex((j) => j.id === jogadorId);
-        if (idxScout < 0 && idxOwn < 0)
-          return { ok: false, msg: "Jogador não encontrado" };
+        if (idxPartida < 0 && idxOwn < 0) return { ok: false, msg: "Jogador não encontrado" };
 
         const semanaAbs = semanaAbsoluta(s.tempo);
-        let newScouting = get().ultimoScouting;
-        let newJogadoresAgencia = s.jogadores;
-        if (idxScout >= 0 && newScouting) {
-          const arr = [...newScouting.jogadores];
-          arr[idxScout] = aplicarObservacao(arr[idxScout], nivel);
-          newScouting = { ...newScouting, jogadores: arr };
+        let novaPartida = partida;
+        let novosJogadores = s.jogadores;
+        if (idxPartida >= 0 && partida) {
+          const arr = [...partida.jogadores];
+          arr[idxPartida] = aplicarObservacao(arr[idxPartida], nivel);
+          novaPartida = { ...partida, jogadores: arr };
         }
         if (idxOwn >= 0) {
           const arr = [...s.jogadores];
           arr[idxOwn] = aplicarObservacao(arr[idxOwn], nivel);
-          newJogadoresAgencia = arr;
+          novosJogadores = arr;
         }
 
         set({
           save: {
             ...s,
-            jogadores: newJogadoresAgencia,
-            empresario: { ...s.empresario, dinheiro: s.empresario.dinheiro - info.custo },
+            jogadores: novosJogadores,
+            ultimaPartida: novaPartida,
+            empresario: { ...s.empresario, dinheiro: s.empresario.dinheiro - custo },
             finance: [
               ...s.finance,
-              { semanaAbs, delta: -info.custo, motivo: `Observação ${info.nome}` },
+              { semanaAbs, delta: -custo, motivo: `Observação ${info.nome}` },
             ],
             lastSavedAt: Date.now(),
           },
-          ultimoScouting: newScouting,
         });
         return { ok: true };
       },
@@ -207,18 +252,20 @@ export const useGame = create<Store>()(
       assinar: (jogadorId) => {
         const s = get().save;
         if (!s) return { ok: false, msg: "Sem jogo" };
-        const scouting = get().ultimoScouting;
-        const jogador = scouting?.jogadores.find((j) => j.id === jogadorId);
-        if (!jogador) return { ok: false, msg: "Jogador não está no relatório" };
-        if (s.jogadores.some((j) => j.id === jogadorId))
-          return { ok: false, msg: "Já é seu cliente" };
+        const partida = s.ultimaPartida;
+        const jogador = partida?.jogadores.find((j) => j.id === jogadorId);
+        if (!jogador) return { ok: false, msg: "Atleta não está mais disponível" };
+        if (!jogador.interessado) return { ok: false, msg: "Atleta não demonstrou interesse" };
+        if (s.jogadores.some((j) => j.id === jogadorId)) return { ok: false, msg: "Já é seu cliente" };
 
-        const p = chanceAssinatura(s.empresario, jogador);
+        let p = chanceAssinatura(s.empresario, jogador);
+        p = Math.min(0.98, p + bonusAssinatura(s.agencia.instalacoes));
         const semanaAbs = semanaAbsoluta(s.tempo);
         if (chance(p)) {
           const novoCliente: Jogador = {
             ...jogador,
             empresarioId: s.empresario.id,
+            interessado: false,
             historico: [
               ...jogador.historico,
               {
@@ -242,9 +289,12 @@ export const useGame = create<Store>()(
             prestigio: s.empresario.prestigio + 1,
           };
           empresario.nivel = calcularNivelPrestigio(empresario.prestigio);
-
-          // remover da lista de scouting para não reassinar
-          const scoutingRestante = scouting!.jogadores.filter((j) => j.id !== jogadorId);
+          const partidaRestante = partida
+            ? {
+                ...partida,
+                jogadores: partida.jogadores.filter((j) => j.id !== jogadorId),
+              }
+            : null;
           set({
             save: {
               ...s,
@@ -252,14 +302,42 @@ export const useGame = create<Store>()(
               noticias: [noticia, ...s.noticias],
               counters,
               empresario,
+              ultimaPartida: partidaRestante,
               lastSavedAt: Date.now(),
             },
-            ultimoScouting: { ...scouting!, jogadores: scoutingRestante },
           });
           return { ok: true, msg: `Contrato assinado com ${jogador.nome}!` };
         } else {
           return { ok: false, msg: `${jogador.nome} recusou a proposta.` };
         }
+      },
+
+      melhorarInstalacao: (key) => {
+        const s = get().save;
+        if (!s) return { ok: false, msg: "Sem jogo" };
+        const atual = s.agencia.instalacoes[key] ?? 0;
+        if (atual >= FACILITY_MAX) return { ok: false, msg: "Nível máximo atingido" };
+        const custo = custoUpgrade(atual);
+        if (s.empresario.dinheiro < custo) return { ok: false, msg: "Dinheiro insuficiente" };
+        const novasInst = { ...s.agencia.instalacoes, [key]: atual + 1 };
+        const semanaAbs = semanaAbsoluta(s.tempo);
+        set({
+          save: {
+            ...s,
+            empresario: { ...s.empresario, dinheiro: s.empresario.dinheiro - custo },
+            agencia: {
+              ...s.agencia,
+              instalacoes: novasInst,
+              nivel: nivelAgencia(novasInst),
+            },
+            finance: [
+              ...s.finance,
+              { semanaAbs, delta: -custo, motivo: `Upgrade instalação (${key})` },
+            ],
+            lastSavedAt: Date.now(),
+          },
+        });
+        return { ok: true, msg: `Instalação melhorada para nível ${atual + 1}` };
       },
 
       responderProposta: (propostaId, acao) => {
@@ -283,7 +361,6 @@ export const useGame = create<Store>()(
           return { ok: true, msg: "Proposta recusada." };
         }
         if (acao === "negociar") {
-          // simples: 50% aumenta valor 10-30%, 50% clube desiste
           if (chance(0.55)) {
             const bump = 1 + (10 + Math.random() * 20) / 100;
             const nova = {
@@ -314,8 +391,8 @@ export const useGame = create<Store>()(
             return { ok: false, msg: `${clube.nome} desistiu do negócio.` };
           }
         }
-        // aceitar
-        const comissao = Math.round((proposta.valor * proposta.comissaoPct) / 100);
+        const bonusPct = bonusComissaoPct(s.agencia.instalacoes);
+        const comissao = Math.round((proposta.valor * (proposta.comissaoPct + bonusPct)) / 100);
         const jogadorAtualizado: Jogador = {
           ...jogador,
           clubeAtualId: clube.id,
@@ -367,8 +444,7 @@ export const useGame = create<Store>()(
         if (!s) return { ok: false, msg: "Sem jogo" };
         const custoInicial = { olheiro: 1500, advogado: 1200, assistente: 800 }[tipo];
         const salario = { olheiro: 400, advogado: 350, assistente: 200 }[tipo];
-        if (s.empresario.dinheiro < custoInicial)
-          return { ok: false, msg: "Dinheiro insuficiente" };
+        if (s.empresario.dinheiro < custoInicial) return { ok: false, msg: "Dinheiro insuficiente" };
         const { id, counters } = makeId(s.counters, "STF");
         const nomes = ["Carlos", "Ana", "Marcos", "Júlia", "Roberto", "Beatriz"];
         const sobs = ["Souza", "Lima", "Ferreira", "Costa", "Alves", "Ribeiro"];
@@ -405,11 +481,12 @@ export const useGame = create<Store>()(
 
       avancarSemana: () => {
         const s = get().save;
-        if (!s) return { eventos: [] };
+        if (!s) return { eventos: [], resumo: null };
         const eventos: string[] = [];
         let counters = s.counters;
         let jogadores = s.jogadores;
         let noticias = s.noticias;
+        let clubes = s.clubes;
         let empresario = { ...s.empresario };
         let finance = [...s.finance];
 
@@ -425,44 +502,70 @@ export const useGame = create<Store>()(
         if (custoFuncionarios > 0) {
           finance.push({ semanaAbs, delta: -custoFuncionarios, motivo: "Salários funcionários" });
         }
-
-        // Patrocínio se prestígio alto
         if (empresario.prestigio >= 10) {
           const patrocinio = 500 + empresario.prestigio * 50;
           empresario.dinheiro += patrocinio;
           finance.push({ semanaAbs, delta: patrocinio, motivo: "Patrocínio semanal" });
         }
 
-        // Envelhecimento anual + evolução
-        if (virouAno) {
-          jogadores = jogadores.map((j) => {
-            const antes = j.idade;
-            const novo = evoluirAno(j);
-            if (novo.idade !== antes) {
-              // pequeno registro
-              novo.historico = [
-                ...novo.historico,
-                {
-                  ano: tempo.ano,
-                  mes: 1,
-                  semana: 1,
-                  texto: `Completou ${novo.idade} anos`,
-                },
-              ];
-            }
-            return novo;
-          });
-          eventos.push(`Virada de ano! Seus jogadores evoluíram.`);
+        // Central de olheiros passiva (descobertas)
+        const olhLvl = s.agencia.instalacoes.olheiros ?? 0;
+        if (olhLvl > 0 && chance(0.7)) {
+          const local = LOCAIS.find((l) => l.key === "campo_municipal")!;
+          for (let i = 0; i < olhLvl; i++) {
+            const r = gerarJogador(counters, local, { estadoPreferido: s.empresario.estado });
+            counters = r.counters;
+            const { noticia, counters: c3 } = criarNoticia(
+              counters,
+              semanaAbs,
+              "Olheiro relata talento",
+              `${r.jogador.nome} ${r.jogador.sobrenome} (${r.jogador.idade}, ${r.jogador.posicao}) foi mapeado pelos seus olheiros em ${r.jogador.cidade}.`,
+              "info",
+            );
+            counters = c3;
+            noticias = [noticia, ...noticias];
+          }
         }
 
-        // Expirar propostas antigas
+        // Envelhecimento anual + evolução + resumo
+        let resumo: YearEndResumo | null = null;
+        if (virouAno) {
+          const jogadoresAntes = jogadores.map((j) => ({ ...j, atributos: { ...j.atributos } }));
+          const clubesAntes = clubes.map((c) => ({ ...c }));
+
+          jogadores = jogadores.map((j) => {
+            const evoluido = evoluirAno(j);
+            return tentarAposentar(evoluido);
+          });
+          // Career year (para clientes)
+          jogadores = anexarCareerYear(jogadores, tempo.ano - 1, clubes, s.empresario.id);
+          clubes = embaralharClubes(clubes);
+
+          // Balanço do ano
+          const inicioAno = semanaAbs - 48;
+          const doAno = finance.filter((f) => f.semanaAbs >= inicioAno);
+          const entradas = doAno.filter((f) => f.delta > 0).reduce((sum, f) => sum + f.delta, 0);
+          const saidas = doAno.filter((f) => f.delta < 0).reduce((sum, f) => sum + Math.abs(f.delta), 0);
+
+          resumo = calcularResumoAno({
+            ano: tempo.ano - 1,
+            jogadoresAntes,
+            jogadoresDepois: jogadores,
+            clubesAntes,
+            clubesDepois: clubes,
+            balanco: { entradas, saidas },
+          });
+          eventos.push(`Virada de ano! Temporada ${tempo.ano - 1} encerrada.`);
+        }
+
+        // Expirar propostas
         let propostas = s.propostas.filter((p) => p.expiraSemanaAbs >= semanaAbs);
 
-        // Gerar novas propostas
+        // Gerar propostas
         const { propostas: novasPropostas, counters: c2 } = gerarPropostasSemana(
           counters,
-          jogadores.filter((j) => j.empresarioId === s.empresario.id),
-          s.clubes,
+          jogadores.filter((j) => j.empresarioId === s.empresario.id && !j.aposentado),
+          clubes,
           empresario,
           semanaAbs,
         );
@@ -471,7 +574,7 @@ export const useGame = create<Store>()(
           propostas = [...propostas, ...novasPropostas];
           for (const p of novasPropostas) {
             const j = jogadores.find((x) => x.id === p.jogadorId);
-            const c = s.clubes.find((x) => x.id === p.clubeId);
+            const c = clubes.find((x) => x.id === p.clubeId);
             if (!j || !c) continue;
             const { noticia, counters: c3 } = criarNoticia(
               counters,
@@ -486,7 +589,6 @@ export const useGame = create<Store>()(
           }
         }
 
-        // Notícia flavor aleatória
         if (chance(0.35)) {
           const flavors = [
             "Um jovem talento chama atenção no interior do país.",
@@ -513,25 +615,60 @@ export const useGame = create<Store>()(
             tempo,
             counters,
             jogadores,
+            clubes,
             propostas,
             noticias,
             empresario,
             finance,
+            assistidosNaSemana: 0,
+            resumoPendente: resumo ?? s.resumoPendente,
             lastSavedAt: Date.now(),
           },
         });
-        return { eventos };
+        return { eventos, resumo };
+      },
+
+      limparResumo: () => {
+        const s = get().save;
+        if (!s) return;
+        set({ save: { ...s, resumoPendente: null, lastSavedAt: Date.now() } });
       },
     }),
     {
       name: "pfa:save",
+      version: 2,
+      migrate: (persisted: unknown, _version: number): { save: SaveState | null } => {
+        const p = persisted as { save?: SaveState | null } | undefined;
+        if (!p?.save) return { save: null };
+        const s = p.save as unknown as Partial<SaveState> & { agencia: Partial<Agencia> & { instalacoes?: unknown } };
+        const inst = (s.agencia?.instalacoes as SaveState["agencia"]["instalacoes"] | undefined) ?? instalacoesIniciais();
+        const migrated: SaveState = {
+          version: 2,
+          empresario: s.empresario!,
+          agencia: {
+            ...(s.agencia as Agencia),
+            instalacoes: inst,
+            nivel: nivelAgencia(inst),
+          },
+          jogadores: (s.jogadores ?? []).map((j) => ({ ...j, historicoCarreira: j.historicoCarreira ?? [] })),
+          clubes: s.clubes ?? CLUBES_SEED,
+          propostas: s.propostas ?? [],
+          noticias: s.noticias ?? [],
+          funcionarios: s.funcionarios ?? [],
+          tempo: s.tempo ?? { ano: 2026, mes: 3, semana: 1 },
+          counters: s.counters ?? {},
+          finance: s.finance ?? [],
+          seed: s.seed ?? Date.now() & 0xffffffff,
+          lastSavedAt: Date.now(),
+          assistidosNaSemana: 0,
+          ultimaPartida: null,
+          resumoPendente: null,
+        };
+        return { save: migrated };
+      },
       storage: createJSONStorage(() => {
         if (typeof window === "undefined") {
-          return {
-            getItem: () => null,
-            setItem: () => {},
-            removeItem: () => {},
-          };
+          return { getItem: () => null, setItem: () => {}, removeItem: () => {} };
         }
         return localStorage;
       }),
