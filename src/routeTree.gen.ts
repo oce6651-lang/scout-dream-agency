@@ -16,14 +16,17 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as GameJogoIndexRouteImport } from './routes/_game.jogo.index'
 import { Route as GameJogoNoticiasRouteImport } from './routes/_game.jogo.noticias'
 import { Route as GameJogoMercadoRouteImport } from './routes/_game.jogo.mercado'
+import { Route as GameJogoFimDeAnoRouteImport } from './routes/_game.jogo.fim-de-ano'
 import { Route as GameJogoExplorarRouteImport } from './routes/_game.jogo.explorar'
 import { Route as GameJogoConfiguracoesRouteImport } from './routes/_game.jogo.configuracoes'
 import { Route as GameJogoCalendarioRouteImport } from './routes/_game.jogo.calendario'
 import { Route as GameJogoAgenciaRouteImport } from './routes/_game.jogo.agencia'
 import { Route as GameJogoMeusIndexRouteImport } from './routes/_game.jogo.meus.index'
+import { Route as GameJogoHistoricoIndexRouteImport } from './routes/_game.jogo.historico.index'
 import { Route as GameJogoPartidaIdRouteImport } from './routes/_game.jogo.partida.$id'
 import { Route as GameJogoMeusIdRouteImport } from './routes/_game.jogo.meus.$id'
 import { Route as GameJogoJogadorIdRouteImport } from './routes/_game.jogo.jogador.$id'
+import { Route as GameJogoHistoricoIdRouteImport } from './routes/_game.jogo.historico.$id'
 
 const NovoRoute = NovoRouteImport.update({
   id: '/novo',
@@ -59,6 +62,11 @@ const GameJogoMercadoRoute = GameJogoMercadoRouteImport.update({
   path: '/jogo/mercado',
   getParentRoute: () => GameRoute,
 } as any)
+const GameJogoFimDeAnoRoute = GameJogoFimDeAnoRouteImport.update({
+  id: '/jogo/fim-de-ano',
+  path: '/jogo/fim-de-ano',
+  getParentRoute: () => GameRoute,
+} as any)
 const GameJogoExplorarRoute = GameJogoExplorarRouteImport.update({
   id: '/jogo/explorar',
   path: '/jogo/explorar',
@@ -84,6 +92,11 @@ const GameJogoMeusIndexRoute = GameJogoMeusIndexRouteImport.update({
   path: '/jogo/meus/',
   getParentRoute: () => GameRoute,
 } as any)
+const GameJogoHistoricoIndexRoute = GameJogoHistoricoIndexRouteImport.update({
+  id: '/jogo/historico/',
+  path: '/jogo/historico/',
+  getParentRoute: () => GameRoute,
+} as any)
 const GameJogoPartidaIdRoute = GameJogoPartidaIdRouteImport.update({
   id: '/jogo/partida/$id',
   path: '/jogo/partida/$id',
@@ -99,6 +112,11 @@ const GameJogoJogadorIdRoute = GameJogoJogadorIdRouteImport.update({
   path: '/jogo/jogador/$id',
   getParentRoute: () => GameRoute,
 } as any)
+const GameJogoHistoricoIdRoute = GameJogoHistoricoIdRouteImport.update({
+  id: '/jogo/historico/$id',
+  path: '/jogo/historico/$id',
+  getParentRoute: () => GameRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -108,12 +126,15 @@ export interface FileRoutesByFullPath {
   '/jogo/calendario': typeof GameJogoCalendarioRoute
   '/jogo/configuracoes': typeof GameJogoConfiguracoesRoute
   '/jogo/explorar': typeof GameJogoExplorarRoute
+  '/jogo/fim-de-ano': typeof GameJogoFimDeAnoRoute
   '/jogo/mercado': typeof GameJogoMercadoRoute
   '/jogo/noticias': typeof GameJogoNoticiasRoute
   '/jogo/': typeof GameJogoIndexRoute
+  '/jogo/historico/$id': typeof GameJogoHistoricoIdRoute
   '/jogo/jogador/$id': typeof GameJogoJogadorIdRoute
   '/jogo/meus/$id': typeof GameJogoMeusIdRoute
   '/jogo/partida/$id': typeof GameJogoPartidaIdRoute
+  '/jogo/historico/': typeof GameJogoHistoricoIndexRoute
   '/jogo/meus/': typeof GameJogoMeusIndexRoute
 }
 export interface FileRoutesByTo {
@@ -124,12 +145,15 @@ export interface FileRoutesByTo {
   '/jogo/calendario': typeof GameJogoCalendarioRoute
   '/jogo/configuracoes': typeof GameJogoConfiguracoesRoute
   '/jogo/explorar': typeof GameJogoExplorarRoute
+  '/jogo/fim-de-ano': typeof GameJogoFimDeAnoRoute
   '/jogo/mercado': typeof GameJogoMercadoRoute
   '/jogo/noticias': typeof GameJogoNoticiasRoute
   '/jogo': typeof GameJogoIndexRoute
+  '/jogo/historico/$id': typeof GameJogoHistoricoIdRoute
   '/jogo/jogador/$id': typeof GameJogoJogadorIdRoute
   '/jogo/meus/$id': typeof GameJogoMeusIdRoute
   '/jogo/partida/$id': typeof GameJogoPartidaIdRoute
+  '/jogo/historico': typeof GameJogoHistoricoIndexRoute
   '/jogo/meus': typeof GameJogoMeusIndexRoute
 }
 export interface FileRoutesById {
@@ -142,12 +166,15 @@ export interface FileRoutesById {
   '/_game/jogo/calendario': typeof GameJogoCalendarioRoute
   '/_game/jogo/configuracoes': typeof GameJogoConfiguracoesRoute
   '/_game/jogo/explorar': typeof GameJogoExplorarRoute
+  '/_game/jogo/fim-de-ano': typeof GameJogoFimDeAnoRoute
   '/_game/jogo/mercado': typeof GameJogoMercadoRoute
   '/_game/jogo/noticias': typeof GameJogoNoticiasRoute
   '/_game/jogo/': typeof GameJogoIndexRoute
+  '/_game/jogo/historico/$id': typeof GameJogoHistoricoIdRoute
   '/_game/jogo/jogador/$id': typeof GameJogoJogadorIdRoute
   '/_game/jogo/meus/$id': typeof GameJogoMeusIdRoute
   '/_game/jogo/partida/$id': typeof GameJogoPartidaIdRoute
+  '/_game/jogo/historico/': typeof GameJogoHistoricoIndexRoute
   '/_game/jogo/meus/': typeof GameJogoMeusIndexRoute
 }
 export interface FileRouteTypes {
@@ -160,12 +187,15 @@ export interface FileRouteTypes {
     | '/jogo/calendario'
     | '/jogo/configuracoes'
     | '/jogo/explorar'
+    | '/jogo/fim-de-ano'
     | '/jogo/mercado'
     | '/jogo/noticias'
     | '/jogo/'
+    | '/jogo/historico/$id'
     | '/jogo/jogador/$id'
     | '/jogo/meus/$id'
     | '/jogo/partida/$id'
+    | '/jogo/historico/'
     | '/jogo/meus/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -176,12 +206,15 @@ export interface FileRouteTypes {
     | '/jogo/calendario'
     | '/jogo/configuracoes'
     | '/jogo/explorar'
+    | '/jogo/fim-de-ano'
     | '/jogo/mercado'
     | '/jogo/noticias'
     | '/jogo'
+    | '/jogo/historico/$id'
     | '/jogo/jogador/$id'
     | '/jogo/meus/$id'
     | '/jogo/partida/$id'
+    | '/jogo/historico'
     | '/jogo/meus'
   id:
     | '__root__'
@@ -193,12 +226,15 @@ export interface FileRouteTypes {
     | '/_game/jogo/calendario'
     | '/_game/jogo/configuracoes'
     | '/_game/jogo/explorar'
+    | '/_game/jogo/fim-de-ano'
     | '/_game/jogo/mercado'
     | '/_game/jogo/noticias'
     | '/_game/jogo/'
+    | '/_game/jogo/historico/$id'
     | '/_game/jogo/jogador/$id'
     | '/_game/jogo/meus/$id'
     | '/_game/jogo/partida/$id'
+    | '/_game/jogo/historico/'
     | '/_game/jogo/meus/'
   fileRoutesById: FileRoutesById
 }
@@ -260,6 +296,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof GameJogoMercadoRouteImport
       parentRoute: typeof GameRoute
     }
+    '/_game/jogo/fim-de-ano': {
+      id: '/_game/jogo/fim-de-ano'
+      path: '/jogo/fim-de-ano'
+      fullPath: '/jogo/fim-de-ano'
+      preLoaderRoute: typeof GameJogoFimDeAnoRouteImport
+      parentRoute: typeof GameRoute
+    }
     '/_game/jogo/explorar': {
       id: '/_game/jogo/explorar'
       path: '/jogo/explorar'
@@ -295,6 +338,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof GameJogoMeusIndexRouteImport
       parentRoute: typeof GameRoute
     }
+    '/_game/jogo/historico/': {
+      id: '/_game/jogo/historico/'
+      path: '/jogo/historico'
+      fullPath: '/jogo/historico/'
+      preLoaderRoute: typeof GameJogoHistoricoIndexRouteImport
+      parentRoute: typeof GameRoute
+    }
     '/_game/jogo/partida/$id': {
       id: '/_game/jogo/partida/$id'
       path: '/jogo/partida/$id'
@@ -316,6 +366,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof GameJogoJogadorIdRouteImport
       parentRoute: typeof GameRoute
     }
+    '/_game/jogo/historico/$id': {
+      id: '/_game/jogo/historico/$id'
+      path: '/jogo/historico/$id'
+      fullPath: '/jogo/historico/$id'
+      preLoaderRoute: typeof GameJogoHistoricoIdRouteImport
+      parentRoute: typeof GameRoute
+    }
   }
 }
 
@@ -324,12 +381,15 @@ interface GameRouteChildren {
   GameJogoCalendarioRoute: typeof GameJogoCalendarioRoute
   GameJogoConfiguracoesRoute: typeof GameJogoConfiguracoesRoute
   GameJogoExplorarRoute: typeof GameJogoExplorarRoute
+  GameJogoFimDeAnoRoute: typeof GameJogoFimDeAnoRoute
   GameJogoMercadoRoute: typeof GameJogoMercadoRoute
   GameJogoNoticiasRoute: typeof GameJogoNoticiasRoute
   GameJogoIndexRoute: typeof GameJogoIndexRoute
+  GameJogoHistoricoIdRoute: typeof GameJogoHistoricoIdRoute
   GameJogoJogadorIdRoute: typeof GameJogoJogadorIdRoute
   GameJogoMeusIdRoute: typeof GameJogoMeusIdRoute
   GameJogoPartidaIdRoute: typeof GameJogoPartidaIdRoute
+  GameJogoHistoricoIndexRoute: typeof GameJogoHistoricoIndexRoute
   GameJogoMeusIndexRoute: typeof GameJogoMeusIndexRoute
 }
 
@@ -338,12 +398,15 @@ const GameRouteChildren: GameRouteChildren = {
   GameJogoCalendarioRoute: GameJogoCalendarioRoute,
   GameJogoConfiguracoesRoute: GameJogoConfiguracoesRoute,
   GameJogoExplorarRoute: GameJogoExplorarRoute,
+  GameJogoFimDeAnoRoute: GameJogoFimDeAnoRoute,
   GameJogoMercadoRoute: GameJogoMercadoRoute,
   GameJogoNoticiasRoute: GameJogoNoticiasRoute,
   GameJogoIndexRoute: GameJogoIndexRoute,
+  GameJogoHistoricoIdRoute: GameJogoHistoricoIdRoute,
   GameJogoJogadorIdRoute: GameJogoJogadorIdRoute,
   GameJogoMeusIdRoute: GameJogoMeusIdRoute,
   GameJogoPartidaIdRoute: GameJogoPartidaIdRoute,
+  GameJogoHistoricoIndexRoute: GameJogoHistoricoIndexRoute,
   GameJogoMeusIndexRoute: GameJogoMeusIndexRoute,
 }
 

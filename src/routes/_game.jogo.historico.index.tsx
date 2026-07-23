@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { Screen } from "@/components/game/Screen";
 import { useGame } from "@/game/store";
 
-export const Route = createFileRoute("/_game/jogo/historico")({
+export const Route = createFileRoute("/_game/jogo/historico/")({
   head: () => ({
     meta: [
       { title: "Histórico da agência — Project Football Agent" },
