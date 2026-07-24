@@ -82,6 +82,9 @@ type Actions = {
   contratarFuncionario: (tipo: Funcionario["tipo"]) => { ok: boolean; msg: string };
   demitirFuncionario: (id: string) => void;
 
+  listarPeneiras: (jogadorId: string) => PeneiraOpcao[];
+  inscreverPeneira: (jogadorId: string, clubeId: string) => { ok: boolean; msg: string };
+
   avancarSemana: () => { eventos: string[]; resumo: YearEndResumo | null };
   limparResumo: () => void;
 };
@@ -93,7 +96,8 @@ function calcularNivelPrestigio(prestigio: number): number {
 }
 
 // Re-exports para conveniência de rotas
-export { LOCAIS, FACILITIES, custoUpgrade, FACILITY_MAX, NIVEIS_OBSERVACAO };
+export { LOCAIS, FACILITIES, custoUpgrade, FACILITY_MAX, NIVEIS_OBSERVACAO, limitePeneirasSemana };
+export type { PeneiraOpcao };
 
 export const useGame = create<Store>()(
   persist(
