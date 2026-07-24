@@ -2,6 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { Screen } from "@/components/game/Screen";
 import { useGame, LOCAIS } from "@/game/store";
+import { CATEGORIAS_LOCAL, type LocalCategoria } from "@/game/engine/scouting";
 import { limitePartidasSemana } from "@/game/engine/facilities";
 
 export const Route = createFileRoute("/_game/jogo/explorar")({
@@ -48,45 +49,60 @@ function Explorar() {
 
       <p className="mb-4 text-xs leading-relaxed text-zinc-500">
         Cada visita simula uma partida ou treino. Apenas atletas que se destacaram
-        demonstram interesse em conversar. Melhore sua agência para desbloquear novos locais.
+        demonstram interesse em conversar. Locais melhores abrem com o nível da agência.
       </p>
 
-      <div className="space-y-2">
-        {LOCAIS.map((l) => {
-          const bloqueado = l.nivelAgenciaRequerido > nivel;
-          const semSaldo = save.empresario.dinheiro < l.custo;
-          const semTurno = restantes <= 0;
-          const disabled = bloqueado || semSaldo || semTurno;
+      <div className="space-y-5">
+        {CATEGORIAS_LOCAL.map((cat: LocalCategoria) => {
+          const locais = LOCAIS.filter((l) => l.categoria === cat).sort(
+            (a, b) => a.nivelAgenciaRequerido - b.nivelAgenciaRequerido,
+          );
           return (
-            <button
-              key={l.key}
-              onClick={() => rodar(l.key)}
-              disabled={disabled}
-              className="flex w-full items-center justify-between rounded-xl bg-zinc-900 p-4 text-left ring-1 ring-white/5 transition-transform active:scale-[0.99] disabled:opacity-40"
-            >
-              <div className="min-w-0 pr-2">
-                <div className="flex items-center gap-2">
-                  <div className="text-sm font-medium text-zinc-100">{l.nome}</div>
-                  <span className="rounded-sm bg-zinc-800 px-1 text-[10px] text-zinc-400">
-                    {l.tipo === "partida" ? "Partida" : "Treino"}
-                  </span>
-                </div>
-                <div className="mt-0.5 text-[11px] text-zinc-500">
-                  {l.descricao} · {l.idadeMin}–{l.idadeMax} anos
-                </div>
-                {bloqueado ? (
-                  <div className="mt-1 inline-flex items-center gap-1 text-[10px] text-red-400">
-                    🔒 Requer agência nível {l.nivelAgenciaRequerido}
-                  </div>
-                ) : null}
+            <div key={cat}>
+              <div className="mb-2 flex items-center gap-2">
+                <div className="text-[10px] uppercase tracking-widest text-emerald-500">{cat}</div>
+                <div className="h-px flex-1 bg-white/5" />
               </div>
-              <div className="shrink-0 text-right">
-                <div className="text-xs font-medium text-emerald-500">
-                  R$ {l.custo.toLocaleString("pt-BR")}
-                </div>
-                <div className="text-[10px] uppercase tracking-widest text-zinc-500">Custo</div>
+              <div className="space-y-2">
+                {locais.map((l) => {
+                  const bloqueado = l.nivelAgenciaRequerido > nivel;
+                  const semSaldo = save.empresario.dinheiro < l.custo;
+                  const semTurno = restantes <= 0;
+                  const disabled = bloqueado || semSaldo || semTurno;
+                  return (
+                    <button
+                      key={l.key}
+                      onClick={() => rodar(l.key)}
+                      disabled={disabled}
+                      className="flex w-full items-center justify-between rounded-xl bg-zinc-900 p-4 text-left ring-1 ring-white/5 transition-transform active:scale-[0.99] disabled:opacity-40"
+                    >
+                      <div className="min-w-0 pr-2">
+                        <div className="flex items-center gap-2">
+                          <div className="text-sm font-medium text-zinc-100">{l.nome}</div>
+                          <span className="rounded-sm bg-zinc-800 px-1 text-[10px] text-zinc-400">
+                            {l.tipo === "partida" ? "Partida" : "Treino"}
+                          </span>
+                        </div>
+                        <div className="mt-0.5 text-[11px] text-zinc-500">
+                          {l.descricao} · {l.idadeMin}–{l.idadeMax} anos
+                        </div>
+                        {bloqueado ? (
+                          <div className="mt-1 inline-flex items-center gap-1 text-[10px] text-red-400">
+                            🔒 Requer agência nível {l.nivelAgenciaRequerido}
+                          </div>
+                        ) : null}
+                      </div>
+                      <div className="shrink-0 text-right">
+                        <div className="text-xs font-medium text-emerald-500">
+                          R$ {l.custo.toLocaleString("pt-BR")}
+                        </div>
+                        <div className="text-[10px] uppercase tracking-widest text-zinc-500">Custo</div>
+                      </div>
+                    </button>
+                  );
+                })}
               </div>
-            </button>
+            </div>
           );
         })}
       </div>
