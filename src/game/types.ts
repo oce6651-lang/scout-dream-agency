@@ -92,6 +92,10 @@ export type Jogador = {
   valorMercado: number;
   historico: HistoricoEntry[];
   historicoCarreira: CareerYear[];
+  /** ano da última transferência (limita 1 por ano). 0 = nunca. */
+  ultimaTransferenciaAno: number;
+  /** clubes que já rejeitaram este atleta em peneiras nesta temporada. */
+  peneirasRejeitadas?: string[];
   // Match-only ephemeral fields
   interessado?: boolean;
   notaPartida?: number;
