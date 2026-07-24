@@ -234,6 +234,7 @@ export type SaveState = {
   seed: number;
   lastSavedAt: number;
   assistidosNaSemana: number;
+  peneirasNaSemana: number;
   ultimaPartida: MatchResult | null;
   resumoPendente: YearEndResumo | null;
 };
