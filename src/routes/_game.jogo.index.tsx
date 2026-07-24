@@ -140,6 +140,14 @@ function Dashboard() {
           icon={<svg className="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>}
         />
         <ActionTile
+          to="/jogo/peneiras"
+          eyebrow="Vitrine"
+          title="Peneiras"
+          hint={`${clientes.filter((j) => !j.clubeAtualId).length} sem clube`}
+          hintAccent={clientes.some((j) => !j.clubeAtualId)}
+          icon={<svg className="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8V4m0 12v2m8-6a8 8 0 11-16 0 8 8 0 0116 0z" /></svg>}
+        />
+        <ActionTile
           to="/jogo/noticias"
           eyebrow="Mídia"
           title="Notícias"
