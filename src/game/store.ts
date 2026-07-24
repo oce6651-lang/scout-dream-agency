@@ -628,6 +628,7 @@ export const useGame = create<Store>()(
             empresario,
             finance,
             assistidosNaSemana: 0,
+            peneirasNaSemana: 0,
             resumoPendente: resumo ?? s.resumoPendente,
             lastSavedAt: Date.now(),
           },
