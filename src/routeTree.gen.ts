@@ -14,6 +14,7 @@ import { Route as CreditosRouteImport } from './routes/creditos'
 import { Route as GameRouteImport } from './routes/_game'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as GameJogoIndexRouteImport } from './routes/_game.jogo.index'
+import { Route as GameJogoPeneirasRouteImport } from './routes/_game.jogo.peneiras'
 import { Route as GameJogoNoticiasRouteImport } from './routes/_game.jogo.noticias'
 import { Route as GameJogoMercadoRouteImport } from './routes/_game.jogo.mercado'
 import { Route as GameJogoFimDeAnoRouteImport } from './routes/_game.jogo.fim-de-ano'
@@ -50,6 +51,11 @@ const IndexRoute = IndexRouteImport.update({
 const GameJogoIndexRoute = GameJogoIndexRouteImport.update({
   id: '/jogo/',
   path: '/jogo/',
+  getParentRoute: () => GameRoute,
+} as any)
+const GameJogoPeneirasRoute = GameJogoPeneirasRouteImport.update({
+  id: '/jogo/peneiras',
+  path: '/jogo/peneiras',
   getParentRoute: () => GameRoute,
 } as any)
 const GameJogoNoticiasRoute = GameJogoNoticiasRouteImport.update({
@@ -129,6 +135,7 @@ export interface FileRoutesByFullPath {
   '/jogo/fim-de-ano': typeof GameJogoFimDeAnoRoute
   '/jogo/mercado': typeof GameJogoMercadoRoute
   '/jogo/noticias': typeof GameJogoNoticiasRoute
+  '/jogo/peneiras': typeof GameJogoPeneirasRoute
   '/jogo/': typeof GameJogoIndexRoute
   '/jogo/historico/$id': typeof GameJogoHistoricoIdRoute
   '/jogo/jogador/$id': typeof GameJogoJogadorIdRoute
@@ -148,6 +155,7 @@ export interface FileRoutesByTo {
   '/jogo/fim-de-ano': typeof GameJogoFimDeAnoRoute
   '/jogo/mercado': typeof GameJogoMercadoRoute
   '/jogo/noticias': typeof GameJogoNoticiasRoute
+  '/jogo/peneiras': typeof GameJogoPeneirasRoute
   '/jogo': typeof GameJogoIndexRoute
   '/jogo/historico/$id': typeof GameJogoHistoricoIdRoute
   '/jogo/jogador/$id': typeof GameJogoJogadorIdRoute
@@ -169,6 +177,7 @@ export interface FileRoutesById {
   '/_game/jogo/fim-de-ano': typeof GameJogoFimDeAnoRoute
   '/_game/jogo/mercado': typeof GameJogoMercadoRoute
   '/_game/jogo/noticias': typeof GameJogoNoticiasRoute
+  '/_game/jogo/peneiras': typeof GameJogoPeneirasRoute
   '/_game/jogo/': typeof GameJogoIndexRoute
   '/_game/jogo/historico/$id': typeof GameJogoHistoricoIdRoute
   '/_game/jogo/jogador/$id': typeof GameJogoJogadorIdRoute
@@ -190,6 +199,7 @@ export interface FileRouteTypes {
     | '/jogo/fim-de-ano'
     | '/jogo/mercado'
     | '/jogo/noticias'
+    | '/jogo/peneiras'
     | '/jogo/'
     | '/jogo/historico/$id'
     | '/jogo/jogador/$id'
@@ -209,6 +219,7 @@ export interface FileRouteTypes {
     | '/jogo/fim-de-ano'
     | '/jogo/mercado'
     | '/jogo/noticias'
+    | '/jogo/peneiras'
     | '/jogo'
     | '/jogo/historico/$id'
     | '/jogo/jogador/$id'
@@ -229,6 +240,7 @@ export interface FileRouteTypes {
     | '/_game/jogo/fim-de-ano'
     | '/_game/jogo/mercado'
     | '/_game/jogo/noticias'
+    | '/_game/jogo/peneiras'
     | '/_game/jogo/'
     | '/_game/jogo/historico/$id'
     | '/_game/jogo/jogador/$id'
@@ -280,6 +292,13 @@ declare module '@tanstack/react-router' {
       path: '/jogo'
       fullPath: '/jogo/'
       preLoaderRoute: typeof GameJogoIndexRouteImport
+      parentRoute: typeof GameRoute
+    }
+    '/_game/jogo/peneiras': {
+      id: '/_game/jogo/peneiras'
+      path: '/jogo/peneiras'
+      fullPath: '/jogo/peneiras'
+      preLoaderRoute: typeof GameJogoPeneirasRouteImport
       parentRoute: typeof GameRoute
     }
     '/_game/jogo/noticias': {
@@ -384,6 +403,7 @@ interface GameRouteChildren {
   GameJogoFimDeAnoRoute: typeof GameJogoFimDeAnoRoute
   GameJogoMercadoRoute: typeof GameJogoMercadoRoute
   GameJogoNoticiasRoute: typeof GameJogoNoticiasRoute
+  GameJogoPeneirasRoute: typeof GameJogoPeneirasRoute
   GameJogoIndexRoute: typeof GameJogoIndexRoute
   GameJogoHistoricoIdRoute: typeof GameJogoHistoricoIdRoute
   GameJogoJogadorIdRoute: typeof GameJogoJogadorIdRoute
@@ -401,6 +421,7 @@ const GameRouteChildren: GameRouteChildren = {
   GameJogoFimDeAnoRoute: GameJogoFimDeAnoRoute,
   GameJogoMercadoRoute: GameJogoMercadoRoute,
   GameJogoNoticiasRoute: GameJogoNoticiasRoute,
+  GameJogoPeneirasRoute: GameJogoPeneirasRoute,
   GameJogoIndexRoute: GameJogoIndexRoute,
   GameJogoHistoricoIdRoute: GameJogoHistoricoIdRoute,
   GameJogoJogadorIdRoute: GameJogoJogadorIdRoute,
@@ -421,13 +442,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

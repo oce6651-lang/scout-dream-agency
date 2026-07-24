@@ -45,6 +45,11 @@ function Detalhe() {
             <div className="text-[11px] text-zinc-500">
               {clube ? `Atualmente em ${clube.nome}` : "Sem clube profissional"}
             </div>
+            {j.ultimaTransferenciaAno === save.tempo.ano ? (
+              <div className="mt-1 inline-block rounded-sm bg-amber-500/10 px-1 text-[10px] font-medium text-amber-400">
+                Sem transferência disponível este ano
+              </div>
+            ) : null}
           </div>
           <div className="text-right">
             <div className="text-[10px] uppercase tracking-widest text-zinc-500">Potencial</div>

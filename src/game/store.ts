@@ -44,6 +44,12 @@ import {
 } from "./engine/yearEnd";
 import { gerarPropostasSemana } from "./engine/market";
 import { criarNoticia } from "./engine/news";
+import {
+  listarPeneirasParaJogador,
+  limitePeneirasSemana,
+  resolverPeneira,
+  type PeneiraOpcao,
+} from "./engine/tryouts";
 import { chance, randi } from "./rng";
 
 type Rascunho = {
@@ -76,6 +82,9 @@ type Actions = {
   contratarFuncionario: (tipo: Funcionario["tipo"]) => { ok: boolean; msg: string };
   demitirFuncionario: (id: string) => void;
 
+  listarPeneiras: (jogadorId: string) => PeneiraOpcao[];
+  inscreverPeneira: (jogadorId: string, clubeId: string) => { ok: boolean; msg: string };
+
   avancarSemana: () => { eventos: string[]; resumo: YearEndResumo | null };
   limparResumo: () => void;
 };
@@ -87,7 +96,8 @@ function calcularNivelPrestigio(prestigio: number): number {
 }
 
 // Re-exports para conveniência de rotas
-export { LOCAIS, FACILITIES, custoUpgrade, FACILITY_MAX, NIVEIS_OBSERVACAO };
+export { LOCAIS, FACILITIES, custoUpgrade, FACILITY_MAX, NIVEIS_OBSERVACAO, limitePeneirasSemana };
+export type { PeneiraOpcao };
 
 export const useGame = create<Store>()(
   persist(
@@ -128,7 +138,7 @@ export const useGame = create<Store>()(
           instalacoes,
         };
         const save: SaveState = {
-          version: 2,
+          version: 3,
           empresario,
           agencia,
           jogadores: [],
@@ -150,6 +160,7 @@ export const useGame = create<Store>()(
           seed: Date.now() & 0xffffffff,
           lastSavedAt: Date.now(),
           assistidosNaSemana: 0,
+          peneirasNaSemana: 0,
           ultimaPartida: null,
           resumoPendente: null,
         };
@@ -391,12 +402,17 @@ export const useGame = create<Store>()(
             return { ok: false, msg: `${clube.nome} desistiu do negócio.` };
           }
         }
+        // aceitar
+        if (jogador.ultimaTransferenciaAno === s.tempo.ano) {
+          return { ok: false, msg: "Este atleta já se transferiu neste ano." };
+        }
         const bonusPct = bonusComissaoPct(s.agencia.instalacoes);
         const comissao = Math.round((proposta.valor * (proposta.comissaoPct + bonusPct)) / 100);
         const jogadorAtualizado: Jogador = {
           ...jogador,
           clubeAtualId: clube.id,
           salario: proposta.salario,
+          ultimaTransferenciaAno: s.tempo.ano,
           historico: [
             ...jogador.historico,
             {
@@ -479,6 +495,110 @@ export const useGame = create<Store>()(
         });
       },
 
+      listarPeneiras: (jogadorId) => {
+        const s = get().save;
+        if (!s) return [];
+        const j = s.jogadores.find((x) => x.id === jogadorId);
+        if (!j) return [];
+        const bonus = (s.agencia.instalacoes.analise ?? 0) * 0.03 + (s.agencia.instalacoes.juridico ?? 0) * 0.02;
+        return listarPeneirasParaJogador(j, s.clubes, s.empresario, bonus);
+      },
+
+      inscreverPeneira: (jogadorId, clubeId) => {
+        const s = get().save;
+        if (!s) return { ok: false, msg: "Sem jogo" };
+        const j = s.jogadores.find((x) => x.id === jogadorId);
+        const clube = s.clubes.find((c) => c.id === clubeId);
+        if (!j || !clube) return { ok: false, msg: "Dados inválidos" };
+        if (j.clubeAtualId) return { ok: false, msg: "Jogador já tem clube." };
+        if (j.ultimaTransferenciaAno === s.tempo.ano) {
+          return { ok: false, msg: "Já teve transferência este ano." };
+        }
+        const limite = limitePeneirasSemana(s.agencia.nivel);
+        if (s.peneirasNaSemana >= limite) {
+          return { ok: false, msg: `Limite de peneiras (${limite}) atingido esta semana.` };
+        }
+        const bonus = (s.agencia.instalacoes.analise ?? 0) * 0.03 + (s.agencia.instalacoes.juridico ?? 0) * 0.02;
+        const opcoes = listarPeneirasParaJogador(j, s.clubes, s.empresario, bonus);
+        const opcao = opcoes.find((o) => o.clubeId === clubeId);
+        if (!opcao) return { ok: false, msg: "Peneira indisponível." };
+        if (s.empresario.dinheiro < opcao.custo) return { ok: false, msg: "Dinheiro insuficiente." };
+
+        const semanaAbs = semanaAbsoluta(s.tempo);
+        const res = resolverPeneira(s.counters, j, clube, opcao, semanaAbs);
+        let counters = res.counters;
+        let noticias = s.noticias;
+        let propostas = s.propostas;
+        let jogadores = s.jogadores;
+
+        const jogadorAtualizado: Jogador = res.aprovado
+          ? {
+              ...j,
+              historico: [
+                ...j.historico,
+                {
+                  ano: s.tempo.ano,
+                  mes: s.tempo.mes,
+                  semana: s.tempo.semana,
+                  texto: `Aprovado em peneira do ${clube.nome}. Proposta a caminho.`,
+                },
+              ],
+            }
+          : {
+              ...j,
+              peneirasRejeitadas: [...(j.peneirasRejeitadas ?? []), clube.id],
+              historico: [
+                ...j.historico,
+                {
+                  ano: s.tempo.ano,
+                  mes: s.tempo.mes,
+                  semana: s.tempo.semana,
+                  texto: `Reprovado em peneira do ${clube.nome}.`,
+                },
+              ],
+            };
+        jogadores = jogadores.map((x) => (x.id === j.id ? jogadorAtualizado : x));
+
+        if (res.aprovado && res.proposta) {
+          propostas = [...propostas, res.proposta];
+        }
+        const { noticia, counters: c3 } = criarNoticia(
+          counters,
+          semanaAbs,
+          res.aprovado ? "Aprovado em peneira" : "Reprovado em peneira",
+          res.aprovado
+            ? `${j.nome} ${j.sobrenome} passou na peneira do ${clube.nome}. Proposta gerada.`
+            : `${j.nome} ${j.sobrenome} não convenceu o ${clube.nome} na peneira.`,
+          res.aprovado ? "sucesso" : "alerta",
+        );
+        counters = c3;
+        noticias = [noticia, ...noticias];
+
+        set({
+          save: {
+            ...s,
+            counters,
+            jogadores,
+            propostas,
+            noticias,
+            peneirasNaSemana: s.peneirasNaSemana + 1,
+            empresario: { ...s.empresario, dinheiro: s.empresario.dinheiro - opcao.custo },
+            finance: [
+              ...s.finance,
+              { semanaAbs, delta: -opcao.custo, motivo: `Peneira ${clube.nome}` },
+            ],
+            lastSavedAt: Date.now(),
+          },
+        });
+        return {
+          ok: res.aprovado,
+          msg: res.aprovado
+            ? `Aprovado! Proposta do ${clube.nome} disponível no mercado.`
+            : `Reprovado no ${clube.nome}. Tente em outro clube.`,
+        };
+      },
+
+
       avancarSemana: () => {
         const s = get().save;
         if (!s) return { eventos: [], resumo: null };
@@ -534,7 +654,8 @@ export const useGame = create<Store>()(
           const clubesAntes = clubes.map((c) => ({ ...c }));
 
           jogadores = jogadores.map((j) => {
-            const evoluido = evoluirAno(j);
+            const bonusAn = (s.agencia.instalacoes.analise ?? 0) * 0.1;
+            const evoluido = evoluirAno(j, bonusAn);
             return tentarAposentar(evoluido);
           });
           // Career year (para clientes)
@@ -568,6 +689,7 @@ export const useGame = create<Store>()(
           clubes,
           empresario,
           semanaAbs,
+          tempo.ano,
         );
         counters = c2;
         if (novasPropostas.length > 0) {
@@ -621,6 +743,7 @@ export const useGame = create<Store>()(
             empresario,
             finance,
             assistidosNaSemana: 0,
+            peneirasNaSemana: 0,
             resumoPendente: resumo ?? s.resumoPendente,
             lastSavedAt: Date.now(),
           },
@@ -636,21 +759,26 @@ export const useGame = create<Store>()(
     }),
     {
       name: "pfa:save",
-      version: 2,
+      version: 3,
       migrate: (persisted: unknown, _version: number): { save: SaveState | null } => {
         const p = persisted as { save?: SaveState | null } | undefined;
         if (!p?.save) return { save: null };
         const s = p.save as unknown as Partial<SaveState> & { agencia: Partial<Agencia> & { instalacoes?: unknown } };
         const inst = (s.agencia?.instalacoes as SaveState["agencia"]["instalacoes"] | undefined) ?? instalacoesIniciais();
         const migrated: SaveState = {
-          version: 2,
+          version: 3,
           empresario: s.empresario!,
           agencia: {
             ...(s.agencia as Agencia),
             instalacoes: inst,
             nivel: nivelAgencia(inst),
           },
-          jogadores: (s.jogadores ?? []).map((j) => ({ ...j, historicoCarreira: j.historicoCarreira ?? [] })),
+          jogadores: (s.jogadores ?? []).map((j) => ({
+            ...j,
+            historicoCarreira: j.historicoCarreira ?? [],
+            ultimaTransferenciaAno: (j as Partial<Jogador>).ultimaTransferenciaAno ?? 0,
+            peneirasRejeitadas: (j as Partial<Jogador>).peneirasRejeitadas ?? [],
+          })),
           clubes: s.clubes ?? CLUBES_SEED,
           propostas: s.propostas ?? [],
           noticias: s.noticias ?? [],
@@ -661,6 +789,7 @@ export const useGame = create<Store>()(
           seed: s.seed ?? Date.now() & 0xffffffff,
           lastSavedAt: Date.now(),
           assistidosNaSemana: 0,
+          peneirasNaSemana: 0,
           ultimaPartida: null,
           resumoPendente: null,
         };

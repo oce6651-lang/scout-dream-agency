@@ -92,6 +92,10 @@ export type Jogador = {
   valorMercado: number;
   historico: HistoricoEntry[];
   historicoCarreira: CareerYear[];
+  /** ano da última transferência (limita 1 por ano). 0 = nunca. */
+  ultimaTransferenciaAno: number;
+  /** clubes que já rejeitaram este atleta em peneiras nesta temporada. */
+  peneirasRejeitadas?: string[];
   // Match-only ephemeral fields
   interessado?: boolean;
   notaPartida?: number;
@@ -216,7 +220,7 @@ export type YearEndResumo = {
 };
 
 export type SaveState = {
-  version: 2;
+  version: 3;
   empresario: Empresario;
   agencia: Agencia;
   jogadores: Jogador[];
@@ -230,6 +234,7 @@ export type SaveState = {
   seed: number;
   lastSavedAt: number;
   assistidosNaSemana: number;
+  peneirasNaSemana: number;
   ultimaPartida: MatchResult | null;
   resumoPendente: YearEndResumo | null;
 };
