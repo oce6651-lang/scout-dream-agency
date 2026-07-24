@@ -6,20 +6,28 @@ import { POSICOES } from "../types";
 import { makeId } from "../ids";
 
 export type LocalKey =
+  | "pelada_rua"
   | "quadra"
   | "campo_municipal"
-  | "escolinha"
   | "varzea_sub17"
   | "varzea_sub20"
-  | "varzea_sub23"
   | "varzea_livre"
+  | "escolinha"
+  | "interescolar"
+  | "copa_regional_sub17"
+  | "copa_regional_sub20"
   | "veterano"
+  | "base_clube_pequeno"
+  | "base_clube_grande"
   | "academia";
+
+export type LocalCategoria = "Amador" | "Regional" | "Base" | "Elite";
 
 export type Local = {
   key: LocalKey;
   nome: string;
   descricao: string;
+  categoria: LocalCategoria;
   tipo: "partida" | "treino";
   custo: number;
   idadeMin: number;
@@ -28,19 +36,35 @@ export type Local = {
   variancia: number;
   potencialMax: number;
   nivelAgenciaRequerido: number;
+  /** raridade de talentos "raros" (0-1). Locais melhores têm curva mais generosa. */
+  raridade: number;
 };
 
 export const LOCAIS: Local[] = [
-  { key: "quadra", nome: "Quadra de Bairro", descricao: "Peladas de bairro, idades misturadas.", tipo: "partida", custo: 40, idadeMin: 10, idadeMax: 35, qualidadeBase: 38, variancia: 18, potencialMax: 70, nivelAgenciaRequerido: 1 },
-  { key: "campo_municipal", nome: "Campo Municipal", descricao: "Rachões locais com jogadores de todas as idades.", tipo: "partida", custo: 80, idadeMin: 12, idadeMax: 40, qualidadeBase: 42, variancia: 20, potencialMax: 78, nivelAgenciaRequerido: 1 },
-  { key: "escolinha", nome: "Escolinha de Futebol", descricao: "Categorias de base infantil (treino).", tipo: "treino", custo: 120, idadeMin: 8, idadeMax: 14, qualidadeBase: 45, variancia: 18, potencialMax: 95, nivelAgenciaRequerido: 2 },
-  { key: "varzea_sub17", nome: "Várzea Sub-17", descricao: "Torneio de base amador. Talento bruto.", tipo: "partida", custo: 180, idadeMin: 15, idadeMax: 17, qualidadeBase: 52, variancia: 22, potencialMax: 92, nivelAgenciaRequerido: 2 },
-  { key: "varzea_sub20", nome: "Várzea Sub-20", descricao: "Categoria de acesso amador.", tipo: "partida", custo: 240, idadeMin: 18, idadeMax: 20, qualidadeBase: 56, variancia: 20, potencialMax: 90, nivelAgenciaRequerido: 3 },
-  { key: "varzea_sub23", nome: "Várzea Sub-23", descricao: "Última chance de vitrine para muitos.", tipo: "partida", custo: 320, idadeMin: 21, idadeMax: 23, qualidadeBase: 60, variancia: 20, potencialMax: 88, nivelAgenciaRequerido: 3 },
-  { key: "varzea_livre", nome: "Várzea Livre", descricao: "Torneios amadores adultos.", tipo: "partida", custo: 400, idadeMin: 18, idadeMax: 32, qualidadeBase: 60, variancia: 22, potencialMax: 85, nivelAgenciaRequerido: 4 },
-  { key: "veterano", nome: "Torneio de Veteranos", descricao: "Jogadores experientes ainda em atividade.", tipo: "partida", custo: 350, idadeMin: 33, idadeMax: 40, qualidadeBase: 62, variancia: 18, potencialMax: 75, nivelAgenciaRequerido: 4 },
-  { key: "academia", nome: "Academia de Futebol", descricao: "Centro de treinamento de elite.", tipo: "treino", custo: 800, idadeMin: 15, idadeMax: 19, qualidadeBase: 70, variancia: 18, potencialMax: 99, nivelAgenciaRequerido: 5 },
+  // Amador — desbloqueado desde o início
+  { key: "pelada_rua", nome: "Pelada de Rua", descricao: "Racha de rua improvisado. Talento raro e cru.", categoria: "Amador", tipo: "partida", custo: 20, idadeMin: 10, idadeMax: 35, qualidadeBase: 25, variancia: 16, potencialMax: 55, nivelAgenciaRequerido: 1, raridade: 0.005 },
+  { key: "quadra", nome: "Quadra de Bairro", descricao: "Peladas de bairro, idades misturadas.", categoria: "Amador", tipo: "partida", custo: 40, idadeMin: 10, idadeMax: 35, qualidadeBase: 28, variancia: 18, potencialMax: 60, nivelAgenciaRequerido: 1, raridade: 0.01 },
+  { key: "campo_municipal", nome: "Campo Municipal", descricao: "Rachões locais de vários bairros.", categoria: "Amador", tipo: "partida", custo: 60, idadeMin: 12, idadeMax: 40, qualidadeBase: 32, variancia: 18, potencialMax: 65, nivelAgenciaRequerido: 1, raridade: 0.015 },
+  { key: "varzea_sub17", nome: "Várzea Sub-17", descricao: "Torneio de base amador. Talento bruto.", categoria: "Amador", tipo: "partida", custo: 90, idadeMin: 15, idadeMax: 17, qualidadeBase: 38, variancia: 20, potencialMax: 78, nivelAgenciaRequerido: 1, raridade: 0.02 },
+  { key: "varzea_sub20", nome: "Várzea Sub-20", descricao: "Categoria amadora de acesso.", categoria: "Amador", tipo: "partida", custo: 110, idadeMin: 18, idadeMax: 20, qualidadeBase: 40, variancia: 20, potencialMax: 76, nivelAgenciaRequerido: 1, raridade: 0.02 },
+  { key: "varzea_livre", nome: "Várzea Livre", descricao: "Torneios amadores adultos.", categoria: "Amador", tipo: "partida", custo: 130, idadeMin: 18, idadeMax: 34, qualidadeBase: 42, variancia: 20, potencialMax: 72, nivelAgenciaRequerido: 1, raridade: 0.015 },
+
+  // Regional — nível 2
+  { key: "escolinha", nome: "Escolinha de Futebol", descricao: "Categoria infantil. Bruto mas com espaço para crescer.", categoria: "Regional", tipo: "treino", custo: 220, idadeMin: 8, idadeMax: 14, qualidadeBase: 42, variancia: 18, potencialMax: 88, nivelAgenciaRequerido: 2, raridade: 0.05 },
+  { key: "interescolar", nome: "Torneio Interescolar", descricao: "Competição entre escolas da cidade.", categoria: "Regional", tipo: "partida", custo: 260, idadeMin: 12, idadeMax: 16, qualidadeBase: 44, variancia: 20, potencialMax: 82, nivelAgenciaRequerido: 2, raridade: 0.04 },
+
+  // Base — nível 3
+  { key: "copa_regional_sub17", nome: "Copa Regional Sub-17", descricao: "Competição estadual de base.", categoria: "Base", tipo: "partida", custo: 480, idadeMin: 15, idadeMax: 17, qualidadeBase: 52, variancia: 20, potencialMax: 88, nivelAgenciaRequerido: 3, raridade: 0.08 },
+  { key: "copa_regional_sub20", nome: "Copa Regional Sub-20", descricao: "Última vitrine antes do profissional.", categoria: "Base", tipo: "partida", custo: 540, idadeMin: 18, idadeMax: 20, qualidadeBase: 55, variancia: 18, potencialMax: 86, nivelAgenciaRequerido: 3, raridade: 0.07 },
+  { key: "veterano", nome: "Torneio de Veteranos", descricao: "Profissionais experientes ainda ativos.", categoria: "Base", tipo: "partida", custo: 420, idadeMin: 33, idadeMax: 40, qualidadeBase: 58, variancia: 16, potencialMax: 70, nivelAgenciaRequerido: 3, raridade: 0.02 },
+
+  // Elite
+  { key: "base_clube_pequeno", nome: "Base de Clube Pequeno", descricao: "Categorias de base de clubes de acesso.", categoria: "Elite", tipo: "treino", custo: 900, idadeMin: 13, idadeMax: 19, qualidadeBase: 60, variancia: 18, potencialMax: 92, nivelAgenciaRequerido: 4, raridade: 0.12 },
+  { key: "base_clube_grande", nome: "Base de Clube Grande", descricao: "Categorias de base de clubes de elite.", categoria: "Elite", tipo: "treino", custo: 1600, idadeMin: 13, idadeMax: 19, qualidadeBase: 68, variancia: 18, potencialMax: 99, nivelAgenciaRequerido: 5, raridade: 0.18 },
+  { key: "academia", nome: "Academia de Elite", descricao: "Centro de treinamento independente premium.", categoria: "Elite", tipo: "treino", custo: 2400, idadeMin: 15, idadeMax: 19, qualidadeBase: 72, variancia: 16, potencialMax: 99, nivelAgenciaRequerido: 5, raridade: 0.22 },
 ];
+
+export const CATEGORIAS_LOCAL: LocalCategoria[] = ["Amador", "Regional", "Base", "Elite"];
 
 export function getLocal(key: LocalKey): Local | undefined {
   return LOCAIS.find((l) => l.key === key);
@@ -58,7 +82,7 @@ function clamp(n: number, min: number, max: number) {
 }
 
 function gerarAtributos(base: number, variancia: number, potencial: number): Atributos {
-  const g = () => clamp(Math.round(base + gaussian() * variancia * 0.5), 20, Math.min(99, potencial));
+  const g = () => clamp(Math.round(base + gaussian() * variancia * 0.5), 15, Math.min(99, potencial));
   return {
     velocidade: g(),
     passe: g(),
@@ -83,7 +107,7 @@ export function overallJogador(j: Jogador): number {
 
 export function calcularValorMercado(j: Jogador): number {
   const media = overallJogador(j);
-  const fatorIdade = j.idade < 20 ? 1.6 : j.idade < 25 ? 1.3 : j.idade < 30 ? 1.0 : 0.6;
+  const fatorIdade = j.idade < 20 ? 1.6 : j.idade < 25 ? 1.3 : j.idade < 30 ? 1.0 : j.idade < 33 ? 0.6 : 0.3;
   const fatorPot = 1 + Math.max(0, j.potencial - media) / 100;
   const base = Math.pow(media, 2.4) * 8;
   return Math.round(base * fatorIdade * fatorPot);
@@ -105,15 +129,23 @@ export function gerarJogador(
   const cidade = pick(cidadesDoEstado(estado.sigla));
   const posicao: Posicao = contexto.posicao ?? pick(POSICOES);
 
+  // Curva de potencial: locais mais elitizados têm chance maior de "raros"
   const roll = Math.random();
+  const rar = local.raridade;
   let potencial: number;
-  if (roll < 0.02) potencial = randi(Math.min(88, local.potencialMax - 4), local.potencialMax);
-  else if (roll < 0.1) potencial = randi(Math.min(75, local.potencialMax - 10), local.potencialMax - 4);
-  else if (roll < 0.5) potencial = randi(55, Math.min(74, local.potencialMax - 10));
-  else potencial = randi(40, 55);
+  if (roll < rar * 0.2) {
+    potencial = randi(Math.max(local.potencialMax - 4, 60), local.potencialMax);
+  } else if (roll < rar) {
+    potencial = randi(Math.max(local.potencialMax - 12, 55), Math.max(local.potencialMax - 4, 60));
+  } else if (roll < rar + 0.25) {
+    potencial = randi(45, Math.max(local.potencialMax - 12, 55));
+  } else {
+    potencial = randi(30, 55);
+  }
 
   // Idade avançada não tem margem para crescer
-  if (idade >= 28) potencial = Math.min(potencial, Math.max(overallBase(local), 50));
+  if (idade >= 28) potencial = Math.min(potencial, Math.max(local.qualidadeBase + 5, 50));
+  if (idade >= 33) potencial = Math.min(potencial, local.qualidadeBase);
 
   const atributos = gerarAtributos(local.qualidadeBase, local.variancia, potencial);
 
@@ -138,13 +170,10 @@ export function gerarJogador(
     valorMercado: 0,
     historico: [],
     historicoCarreira: [],
+    ultimaTransferenciaAno: 0,
   };
   jogador.valorMercado = calcularValorMercado(jogador);
   return { jogador, counters: c2 };
-}
-
-function overallBase(local: Local): number {
-  return local.qualidadeBase;
 }
 
 // Formação canônica 4-3-3 para gerar 11 posições coerentes
