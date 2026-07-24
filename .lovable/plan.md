@@ -1,102 +1,90 @@
-## Reformulação do loop de scouting e agência
+# Project Football Agent — pass "mais profissional"
 
-Refino do MVP com novo loop de descoberta baseado em partidas/treinos, progressão de locais desbloqueáveis, upgrades de agência, histórico de carreira dos jogadores e resumo de fim de ano.
+Refatoração ampla focada em progressão realista, mercado difícil e envelhecimento com consequências. Nada de reescrever a arquitetura — só ajustar sistemas existentes e adicionar peneiras.
 
-### 1. Locais desbloqueáveis por progresso
+## 1. Novos locais de scouting (src/game/engine/scouting.ts)
 
-Substituir a lista fixa atual de `LOCAIS` por locais com requisitos (nível da agência / reputação / prestígio):
+Várzea desbloqueada desde o início; teto de qualidade e potencial cresce com o nível da agência.
 
-| Local | Desbloqueio | Faixa etária | Overall base |
-|---|---|---|---|
-| Quadra de bairro | inicial | 8–35 (livre) | baixo |
-| Campo municipal | inicial | 8–40 | baixo |
-| Escolinha de futebol | Agência nv 2 | 8–14 | baixo/médio |
-| Várzea Sub-17 | Agência nv 2 | 15–17 | médio |
-| Várzea Sub-20 | Agência nv 3 | 18–20 | médio |
-| Várzea Sub-23 | Agência nv 3 | 21–23 | médio/alto |
-| Várzea Livre | Agência nv 4 | 18–32 | médio/alto |
-| Veterano | Agência nv 4 | 33–40 | alto (sem potencial) |
-| Academia de futebol | Agência nv 5 | 15–19 | alto |
+| Local | Nível req | Tipo | Idade | Qualidade base | Pot. teto |
+|---|---|---|---|---|---|
+| Pelada de rua | 1 | partida | 10–35 | 25 | 55 |
+| Quadra de bairro | 1 | partida | 10–35 | 28 | 60 |
+| Campo municipal | 1 | partida | 12–40 | 32 | 65 |
+| Várzea Sub-17 | 1 | partida | 15–17 | 38 | 78 |
+| Várzea Sub-20 | 1 | partida | 18–20 | 40 | 76 |
+| Várzea livre | 1 | partida | 18–34 | 42 | 72 |
+| Escolinha de futebol | 2 | treino | 8–14 | 42 | 88 |
+| Torneio interescolar | 2 | partida | 12–16 | 44 | 82 |
+| Copa regional Sub-17 | 3 | partida | 15–17 | 52 | 88 |
+| Copa regional Sub-20 | 3 | partida | 18–20 | 55 | 86 |
+| Torneio de veteranos | 3 | partida | 33–40 | 58 | 70 |
+| Base de clube pequeno | 4 | treino | 13–19 | 60 | 92 |
+| Base de clube grande | 5 | treino | 13–19 | 68 | 99 |
+| Academia de elite | 5 | treino | 15–19 | 72 | 99 |
 
-Cada local mostra ícone de cadeado + requisito quando indisponível.
+Curva de potencial dos locais fica mais dura no início (menos "raros"), mais generosa nos locais avançados.
 
-### 2. Nova mecânica: assistir partida/treino
+## 2. Peneiras (novo sistema)
 
-Fluxo:
-1. Jogador escolhe local → paga custo.
-2. Sistema gera **22 atletas** (2 times de 11) para partida OU **grupo de treino de ~16** para escolinha, com posições coerentes (GOL, ZAG, LD, LE, VOL, MC, MEI, PD, PE, ATA).
-3. Tela de "partida" simulada: placar + destaques (gols, defesas, dribles) baseados em atributos, animação simples de progresso.
-4. Ao fim, cada atleta recebe uma **nota de desempenho** (6.0–9.5) visível.
-5. Um subconjunto (2–5) demonstra **interesse** em conversar; só esses podem ir para observação/contratação.
-6. Os demais somem do resultado (não recrutáveis nesta rodada).
+`src/game/engine/tryouts.ts` + rota `src/routes/_game.jogo.peneiras.tsx` + tile no dashboard.
 
-**Limite: 2 partidas/treinos por semana.** Contador exibido no dashboard e no header da tela Explorar; ao esgotar, botões ficam desabilitados até avançar semana.
+- Para cada jogador **da agência sem clube**, o empresário paga custo para inscrever numa peneira de um clube compatível (nível do clube ≤ overall/10 + 1, limitado pelo prestígio).
+- Chance de aprovação depende de: overall vs nível do clube, observação, personalidade, sorte, e bônus do "Sala de análise" / "Jurídico".
+- Consome 1 turno de peneira/semana (limite = 1 + nível da agência).
+- Resultado gera notícia, e se aprovado abre proposta única daquele clube (sem multiplicar em `mercado`).
 
-### 3. Upgrades da agência
+## 3. Mercado mais duro (src/game/engine/market.ts)
 
-Nova aba em `/jogo/agencia` com **instalações** além de funcionários:
+- Corta chance base pela metade; ganho por prestígio reduzido.
+- Só gera proposta se **jogador é "conhecido"**: `observacaoNivel >= 1` **ou** `historicoCarreira.length > 0` **ou** já teve clube. Desconhecidos ficam só com peneiras.
+- Filtro de clube por nível fica mais restrito (±2 em vez de ±3).
+- **1 transferência por ano por jogador**: novo campo `ultimaTransferenciaAno` no `Jogador`. `aceitarProposta` rejeita se `ano === ultimaTransferenciaAno`. Propostas para esses jogadores nem são geradas.
+- Clubes grandes (`nivel >= 8`) só propõem para jogadores com overall ≥ 75.
 
-| Instalação | Efeito por nível |
-|---|---|
-| Alojamento | +N vagas para clientes sem clube (reduz risco de perda; pequeno bônus de moral/evolução) |
-| Escritório | +ações por semana (ex.: +1 partida assistível no nível 3, +limite de propostas paralelas) |
-| Central de olheiros | Descoberta passiva semanal: N jogadores aleatórios entram na lista de "olheiros trouxeram" com qualidade proporcional ao nível |
-| Sala de análise | Reduz custo de observação e aumenta precisão do relatório |
-| Departamento jurídico | Melhora comissões negociadas e reduz risco de perder cliente |
+## 4. Evolução por idade (src/game/engine/evolution.ts)
 
-Cada upgrade: custo em R$, tempo (semanas) e nível máx (ex.: 5). Nível da agência = média dos níveis das instalações (destrava locais).
+Substitui a lógica binária "≥30 declina". Curva contínua:
 
-### 4. Histórico de carreira dos jogadores
+- 15–20: ganho alto, sem regressão.
+- 21–25: ganho médio.
+- 26–28: ganho baixo, sem regressão.
+- 29–31: estagnação, regressão leve em atributos físicos (velocidade, físico).
+- 32–34: regressão média em físicos, leve nos demais.
+- 35+: regressão forte, chance de aposentadoria cresce com idade.
 
-Substituir a rota **Relatório Financeiro** por **Histórico da Agência** (`/jogo/historico`):
+Ganho também escala com potencial restante e com nível de "Sala de análise" da agência (bônus pequeno).
 
-- Lista todos os jogadores que já passaram pela agência (ativos + ex-clientes).
-- Detalhe por jogador com timeline anual:
-  - Ano, idade, clube, categoria (Sub-17/20/Profissional/Veterano)
-  - Jogos, gols, assistências (gerados sinteticamente a cada ano com base em posição + atributos + nível do clube)
-  - Overall no fim do ano
-  - Eventos (transferência, renovação, aposentadoria)
-- Novo tipo `CareerYear` no `Jogador.historicoCarreira[]`, populado no resumo de fim de ano.
+## 5. Assinatura mais realista (src/game/engine/signing.ts)
 
-### 5. Saldo negativo em vermelho
+- Jovens promissores (idade < 18 e potencial alto) mais fáceis.
+- Jogadores > 30 mais céticos (menos base).
+- "Conhecidos" (já tiveram clube) exigem mais prestígio.
 
-`KpiCard` e header do dashboard: quando `empresario.dinheiro < 0`, valor renderiza em `text-red-500` com prefixo "-R$". Aplica-se em todas as telas que mostram saldo.
+## 6. Ajustes de UI
 
-### 6. Resumo de fim de ano
+- `explorar.tsx`: agrupar locais por categoria (Amador / Base / Elite) com header, e ordenar por nível requerido.
+- Dashboard `_game.jogo.index.tsx`: novo tile "Peneiras".
+- `meus/$id`: mostrar "última transferência" e badge "sem transferência disponível este ano" quando aplicável.
+- `PlayerCard`: badge "Livre" quando sem clube.
 
-Nova rota modal `/jogo/fim-de-ano` disparada automaticamente quando `avancarSemana` cruza dezembro→janeiro:
+## 7. Migração save
 
-- Cabeçalho: "Temporada {ano} encerrada".
-- Seções, cada uma com lista rolável:
-  1. **Envelhecimento**: cada cliente com idade antes → depois; ícone de aposentadoria para >37.
-  2. **Evolução de atributos**: delta por atributo (verde/vermelho) e novo overall.
-  3. **Mudança de categoria**: Sub-17 → Sub-20 → Sub-23 → Profissional → Veterano.
-  4. **Clubes**: promoções/rebaixamentos sintéticos (leve variação de `nivel` dos clubes brasileiros).
-  5. **Balanço**: comissão total do ano, custos, lucro.
-- CTA "Continuar temporada" fecha o modal e volta ao dashboard.
+- Bump `version: 2 → 3` em `SaveState` (types + store).
+- Migração: para cada jogador, definir `ultimaTransferenciaAno = 0`.
+- Backfill de campos usados por peneiras/histórico.
 
-### Arquivos afetados
+## 8. Balanceamento numérico
 
-**Tipos e engine**
-- `src/game/types.ts`: adicionar `Instalacao`, `CareerYear`, `MatchResult`, campos `nivelRequerido` em local, `assistidosNaSemana`, `interessados` em jogador.
-- `src/game/engine/scouting.ts`: refatorar `LOCAIS` com requisitos, adicionar `gerarPartida()` e `gerarTreino()` (22/16 atletas, times, posições balanceadas, notas).
-- `src/game/engine/match.ts` (novo): simulação de partida — placar, destaques, notas, seleção de "interessados".
-- `src/game/engine/facilities.ts` (novo): definição, custos e efeitos de instalações.
-- `src/game/engine/evolution.ts`: gerar `CareerYear` (jogos/gols/assistências por posição+overall+clube) e mudanças de categoria.
-- `src/game/engine/yearEnd.ts` (novo): consolida deltas para o resumo.
-- `src/game/store.ts`: `assistidosNaSemana`, ações `assistirPartida`, `melhorarInstalacao`, gate `avancarSemana` → dispara `yearEnd` quando aplicável, expõe `resumoFimDeAno`.
+- Custos dos locais amadores caem (várzea acessível cedo).
+- Custos de peneiras: R$ 500 (base) até R$ 5.000 (clube grande).
+- Comissões via peneira ficam menores que via proposta espontânea (empresário precisa correr atrás).
 
-**Rotas**
-- `src/routes/_game.jogo.explorar.tsx`: cadeados por local, contador 2/semana.
-- `src/routes/_game.jogo.partida.$id.tsx` (novo): tela de simulação + lista pós-jogo com nota + tag "Interessado".
-- `src/routes/_game.jogo.agencia.tsx`: abas Funcionários / Instalações.
-- `src/routes/_game.jogo.historico.tsx` (novo): lista + detalhe da carreira; substitui `_game.jogo.financeiro.tsx` (remover) e o tile do dashboard.
-- `src/routes/_game.jogo.fim-de-ano.tsx` (novo).
-- `src/routes/_game.jogo.index.tsx`: novo tile "Histórico", contador de partidas restantes, saldo vermelho quando negativo.
-- `src/components/game/KpiCard.tsx`: prop/lógica para cor negativa.
+## Aspectos técnicos
 
-### Fora do escopo desta iteração
+- Tudo TS estrito; nenhuma mudança em rotas raiz nem em `router.tsx`.
+- Nenhuma alteração de backend / Cloud.
+- Bump da versão do save + migração inline no `useGame` (mesma pattern do v1→v2).
+- Verificação final: `tsgo` + smoke via Playwright na rota `/jogo/explorar` e `/jogo/peneiras`.
 
-- Estatísticas reais de partidas jogadas pelos clientes (usaremos números gerados coerentes).
-- Central de olheiros com árvore mundial — no MVP entrega apenas +N descobertas semanais.
-- Sistema de moral/lesões vinculado ao alojamento — apenas hook simples.
+Confirma que quer que eu implemente tudo isso? Se preferir cortar algo (ex.: adiar peneiras), me diz antes de eu começar.
