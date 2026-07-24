@@ -568,6 +568,7 @@ export const useGame = create<Store>()(
           clubes,
           empresario,
           semanaAbs,
+          tempo.ano,
         );
         counters = c2;
         if (novasPropostas.length > 0) {
