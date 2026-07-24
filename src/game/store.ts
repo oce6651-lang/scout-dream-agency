@@ -128,7 +128,7 @@ export const useGame = create<Store>()(
           instalacoes,
         };
         const save: SaveState = {
-          version: 2,
+          version: 3,
           empresario,
           agencia,
           jogadores: [],
