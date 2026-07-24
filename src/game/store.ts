@@ -540,7 +540,8 @@ export const useGame = create<Store>()(
           const clubesAntes = clubes.map((c) => ({ ...c }));
 
           jogadores = jogadores.map((j) => {
-            const evoluido = evoluirAno(j);
+            const bonusAn = (s.agencia.instalacoes.analise ?? 0) * 0.1;
+            const evoluido = evoluirAno(j, bonusAn);
             return tentarAposentar(evoluido);
           });
           // Career year (para clientes)
