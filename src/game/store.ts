@@ -391,12 +391,17 @@ export const useGame = create<Store>()(
             return { ok: false, msg: `${clube.nome} desistiu do negócio.` };
           }
         }
+        // aceitar
+        if (jogador.ultimaTransferenciaAno === s.tempo.ano) {
+          return { ok: false, msg: "Este atleta já se transferiu neste ano." };
+        }
         const bonusPct = bonusComissaoPct(s.agencia.instalacoes);
         const comissao = Math.round((proposta.valor * (proposta.comissaoPct + bonusPct)) / 100);
         const jogadorAtualizado: Jogador = {
           ...jogador,
           clubeAtualId: clube.id,
           salario: proposta.salario,
+          ultimaTransferenciaAno: s.tempo.ano,
           historico: [
             ...jogador.historico,
             {
