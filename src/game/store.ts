@@ -673,6 +673,7 @@ export const useGame = create<Store>()(
           seed: s.seed ?? Date.now() & 0xffffffff,
           lastSavedAt: Date.now(),
           assistidosNaSemana: 0,
+          peneirasNaSemana: 0,
           ultimaPartida: null,
           resumoPendente: null,
         };
