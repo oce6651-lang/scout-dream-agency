@@ -220,7 +220,7 @@ export type YearEndResumo = {
 };
 
 export type SaveState = {
-  version: 2;
+  version: 3;
   empresario: Empresario;
   agencia: Agencia;
   jogadores: Jogador[];
