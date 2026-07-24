@@ -44,6 +44,12 @@ import {
 } from "./engine/yearEnd";
 import { gerarPropostasSemana } from "./engine/market";
 import { criarNoticia } from "./engine/news";
+import {
+  listarPeneirasParaJogador,
+  limitePeneirasSemana,
+  resolverPeneira,
+  type PeneiraOpcao,
+} from "./engine/tryouts";
 import { chance, randi } from "./rng";
 
 type Rascunho = {
