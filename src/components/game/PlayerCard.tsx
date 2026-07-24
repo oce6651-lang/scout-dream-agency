@@ -6,6 +6,7 @@ export function PlayerCard({ j, hrefBase }: { j: Jogador; hrefBase: "jogador" | 
   const media = Math.round(
     (j.atributos.velocidade + j.atributos.passe + j.atributos.finalizacao + j.atributos.defesa + j.atributos.fisico + j.atributos.tecnica + j.atributos.mental) / 7,
   );
+  const livre = hrefBase === "meus" && !j.clubeAtualId;
   return (
     <Link
       to={hrefBase === "jogador" ? "/jogo/jogador/$id" : "/jogo/meus/$id"}
@@ -24,6 +25,11 @@ export function PlayerCard({ j, hrefBase }: { j: Jogador; hrefBase: "jogador" | 
           <span className="rounded-sm bg-emerald-500/10 px-1 text-[10px] font-medium text-emerald-500">
             {j.posicao}
           </span>
+          {livre ? (
+            <span className="rounded-sm bg-amber-500/10 px-1 text-[10px] font-medium text-amber-400">
+              Livre
+            </span>
+          ) : null}
         </div>
         <div className="mt-0.5 truncate text-[11px] text-zinc-500">
           {j.idade} anos · {j.cidade}-{j.estado} · {j.peDominante}
@@ -40,3 +46,4 @@ export function PlayerCard({ j, hrefBase }: { j: Jogador; hrefBase: "jogador" | 
     </Link>
   );
 }
+
