@@ -637,21 +637,26 @@ export const useGame = create<Store>()(
     }),
     {
       name: "pfa:save",
-      version: 2,
+      version: 3,
       migrate: (persisted: unknown, _version: number): { save: SaveState | null } => {
         const p = persisted as { save?: SaveState | null } | undefined;
         if (!p?.save) return { save: null };
         const s = p.save as unknown as Partial<SaveState> & { agencia: Partial<Agencia> & { instalacoes?: unknown } };
         const inst = (s.agencia?.instalacoes as SaveState["agencia"]["instalacoes"] | undefined) ?? instalacoesIniciais();
         const migrated: SaveState = {
-          version: 2,
+          version: 3,
           empresario: s.empresario!,
           agencia: {
             ...(s.agencia as Agencia),
             instalacoes: inst,
             nivel: nivelAgencia(inst),
           },
-          jogadores: (s.jogadores ?? []).map((j) => ({ ...j, historicoCarreira: j.historicoCarreira ?? [] })),
+          jogadores: (s.jogadores ?? []).map((j) => ({
+            ...j,
+            historicoCarreira: j.historicoCarreira ?? [],
+            ultimaTransferenciaAno: (j as Partial<Jogador>).ultimaTransferenciaAno ?? 0,
+            peneirasRejeitadas: (j as Partial<Jogador>).peneirasRejeitadas ?? [],
+          })),
           clubes: s.clubes ?? CLUBES_SEED,
           propostas: s.propostas ?? [],
           noticias: s.noticias ?? [],
